@@ -1,21 +1,22 @@
-# Explicación de la Feature: Etapa 1 - Inicialización y Configuración
+# Explicación de la Feature: Etapa 2 - Script de Semillero (Seeder)
 
-Esta rama (`feature/stage-1-config`) contiene la configuración inicial del entorno del servidor y la conexión base a la base de datos Neo4j Aura.
+Esta rama (`feature/stage-2-seeder`) incorpora la lógica para automatizar la inserción de datos iniciales en la base de datos de grafos de Neo4j Aura.
 
 ## Qué hace esta etapa
 
-1.  **Inicialización del Proyecto Node.js:**
-    Se creó el archivo `package.json` y se configuró como módulo ES (`"type": "module"`) para habilitar el uso moderno de sentencias `import/export`.
+1.  **Script de Poblado (`utils/seeder.js`):**
+    *   Este script lee dinámicamente el archivo `poblar_recetario.cypher` desde el sistema de archivos del backend.
+    *   Analiza y divide el archivo por punto y coma (`;`) para separar cada bloque de consultas.
+    *   Filtra líneas en blanco o comentarios y ejecuta secuencialmente cada sentencia Cypher utilizando la sesión del driver de Neo4j configurada en la etapa anterior.
+    *   Permite poblar la base de datos entera de una sola vez con 24 bloques de instrucciones.
 
-2.  **Instalación de Dependencias Clave:**
-    *   `express`: Framework para construir el servidor y los endpoints.
-    *   `neo4j-driver`: SDK oficial para conectar la aplicación Node.js a la base de datos de grafos Neo4j.
-    *   `dotenv`: Administrador de variables de entorno para proteger datos sensibles como credenciales de acceso.
-    *   `cors` y `morgan`: Middlewares para configurar el intercambio de recursos de origen cruzado y llevar registro (logging) de solicitudes HTTP.
+2.  **Configuración de Tareas en `package.json`:**
+    *   Se registró el script `"seed": "node utils/seeder.js"` dentro de la sección `"scripts"` de `package.json`.
+    *   Esto permite a cualquier desarrollador ejecutar el comando simple `npm run seed` en la terminal para poblar la base de datos automáticamente de forma local o en entornos de staging.
 
-3.  **Configuración del Driver de Neo4j (`config/neo4j.js`):**
-    *   Se implementó la instanciación única del driver oficial de Neo4j utilizando la URI y autenticación básica desde las variables de entorno.
-    *   Se expone la función `getSession()` encargada de proveer sesiones individuales para interactuar con la base de datos y la función `closeDriver()` para cerrar la conexión global ordenadamente.
-
-4.  **Verificación de la Conexión (`test-connection.js`):**
-    *   Script auxiliar de consola que establece una sesión, ejecuta una consulta simple (`RETURN 1 AS number`), imprime la versión y dirección del servidor Aura remoto y cierra la sesión. Sirve para garantizar que las credenciales del `.env` son correctas antes de iniciar el desarrollo de la API.
+3.  **Datos insertados en el Grafo:**
+    *   **5 Categorías:** 'SIN TACC', 'Vegetariano', 'Vegano', 'Pastas', 'Postre'.
+    *   **3 Usuarios de Prueba:** 'Ornella', 'Juan', 'Ana'.
+    *   **39 Ingredientes:** Lentejas, cebolla, zanahoria, pollo, etc.
+    *   **10 Recetas de Cocina:** Guiso de lentejas, Pizza margherita, etc. con sus relaciones `CREO`, `PERTENECE_A` y `CONTIENE`.
+    *   **Relación de Favoritos (`GUARDO_FAV`):** Guardados de recetas preestablecidos para cada usuario.
