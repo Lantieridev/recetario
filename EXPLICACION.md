@@ -12,6 +12,7 @@ Esta rama (`feature/stage-2-seeder`) incorpora la lógica para automatizar la in
 
 2.  **Configuración de Tareas en `package.json`:**
     *   Se registró el script `"seed": "node utils/seeder.js"` dentro de la sección `"scripts"` de `package.json`.
+    *   Se registró el script `"db:clean": "node utils/cleanDB.js"` para vaciar el grafo de manera segura y evitar duplicados.
     *   Esto permite a cualquier desarrollador ejecutar el comando simple `npm run seed` en la terminal para poblar la base de datos automáticamente de forma local o en entornos de staging.
 
 3.  **Datos insertados en el Grafo:**
