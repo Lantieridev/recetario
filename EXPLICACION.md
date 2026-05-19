@@ -1,22 +1,28 @@
-# Explicación de la Feature: Etapa 2 - Script de Semillero (Seeder)
+# Explicación de la Feature: Etapa 3 - Desarrollo de la API (8 Endpoints)
 
-Esta rama (`feature/stage-2-seeder`) incorpora la lógica para automatizar la inserción de datos iniciales en la base de datos de grafos de Neo4j Aura.
+Esta rama (`feature/stage-3-api`) incorpora toda la estructura HTTP (rutas y controladores de Express.js) para exponer la API Rest y ejecutar las consultas de grafos en Cypher.
 
 ## Qué hace esta etapa
 
-1.  **Script de Poblado (`utils/seeder.js`):**
-    *   Este script lee dinámicamente el archivo `poblar_recetario.cypher` desde el sistema de archivos del backend.
-    *   Analiza y divide el archivo por punto y coma (`;`) para separar cada bloque de consultas.
-    *   Filtra líneas en blanco o comentarios y ejecuta secuencialmente cada sentencia Cypher utilizando la sesión del driver de Neo4j configurada en la etapa anterior.
-    *   Permite poblar la base de datos entera de una sola vez con 24 bloques de instrucciones.
+1.  **Creación del Servidor Express (`app.js` y `server.js`):**
+    *   Se configuraron los middlewares globales como `cors` para el acceso externo y `morgan` para registrar solicitudes entrantes en consola.
+    *   Se estructuró el arranque del servidor en un puerto configurable desde variables de entorno.
 
-2.  **Configuración de Tareas en `package.json`:**
-    *   Se registró el script `"seed": "node utils/seeder.js"` dentro de la sección `"scripts"` de `package.json`.
-    *   Esto permite a cualquier desarrollador ejecutar el comando simple `npm run seed` en la terminal para poblar la base de datos automáticamente de forma local o en entornos de staging.
+2.  **Definición de Rutas y Controladores:**
+    *   Se dividió la lógica en dos submódulos organizados: `/api/usuarios` y `/api/recetas`.
+    *   Los controladores ejecutan código Cypher puro y explícito a través del driver, garantizando control total de los grafos sin ORM.
 
-3.  **Datos insertados en el Grafo:**
-    *   **5 Categorías:** 'SIN TACC', 'Vegetariano', 'Vegano', 'Pastas', 'Postre'.
-    *   **3 Usuarios de Prueba:** 'Ornella', 'Juan', 'Ana'.
-    *   **39 Ingredientes:** Lentejas, cebolla, zanahoria, pollo, etc.
-    *   **10 Recetas de Cocina:** Guiso de lentejas, Pizza margherita, etc. con sus relaciones `CREO`, `PERTENECE_A` y `CONTIENE`.
-    *   **Relación de Favoritos (`GUARDO_FAV`):** Guardados de recetas preestablecidos para cada usuario.
+3.  **Los 8 Endpoints Implementados:**
+    *   **Usuarios (`/api/usuarios`):**
+        1.  `POST /`: Crea un nodo `Usuario`.
+        2.  `GET /:nombre`: Lee perfil, recetas creadas (`[:CREO]`) y favoritas (`[:GUARDO_FAV]`).
+        3.  `POST /:nombre/favoritos`: Vincula usuario con receta mediante `GUARDO_FAV`.
+        4.  `GET /:nombre/recomendaciones` **(Consulta Compleja 1)**: Algoritmo de filtrado colaborativo en grafos que analiza recetas comunes con otros usuarios para sugerir 5 nuevas recetas no guardadas previamente.
+    *   **Recetas (`/api/recetas`):**
+        5.  `POST /`: Registra una `Receta` y la enlaza a su creador (`Usuario`) y a su `Categoria`.
+        6.  `POST /:titulo/ingredientes`: Agrega o enlaza un `Ingrediente` especificando la propiedad `cantidad` de la relación `CONTIENE`.
+        7.  `GET /`: Lista las recetas permitiendo aplicar filtros de `categoria`, `dificultad` o `tiempo`.
+        8.  `GET /buscar` **(Consulta Compleja 2)**: Buscador inteligente en grafo que recibe ingredientes disponibles (`tengo`) e indeseados (`noQuiero`), devolviendo recetas ordenadas por número de coincidencias y detallando qué ingredientes específicos te hacen falta para completarlas.
+
+4.  **Pruebas de Integración (`test-endpoints.js`):**
+    *   Se incluyó un script automatizado que inicia el servidor Express temporalmente, ejecuta llamadas a cada uno de los 8 endpoints y verifica que la base de datos Neo4j Aura devuelva datos y relaciones correctamente.
