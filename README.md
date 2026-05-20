@@ -57,6 +57,12 @@ TP2_Neo4j/
 *   Creación de `test-endpoints.js` para realizar pruebas de integración de extremo a extremo, validando las respuestas JSON y los códigos de estado HTTP de los 8 endpoints.
 *   Redacción del presente documento explicativo de las etapas de desarrollo.
 
+### Etapa 5: Integración Frontend-Backend
+*   Se renombró y sirvió de manera estática el cliente web de React (ubicado en `/FrontEnd`) directamente a través de Express.
+*   Se crearon nuevos endpoints para alimentar el frontend: `POST /api/usuarios/login`, `POST /api/usuarios/:nombre/favoritos/toggle`, `GET /api/recetas/categorias`, y `GET /api/recetas/ingredientes`.
+*   Se actualizó el endpoint de buscar y listar recetas para devolver la información estructurada (como la categoría y el creador) que requiere la interfaz visual.
+*   Se reescribió `FrontEnd/src/api.js` reemplazando los mocks de memoria local por llamadas HTTP `fetch` reales conectadas a la API REST, logrando un flujo "Fullstack Neo4j" 100% operativo en `http://localhost:3000/`.
+
 ---
 
 ## 📌 Detalle de los 8 Endpoints y Consultas Cypher
@@ -244,3 +250,4 @@ El trabajo se estructuró dividiéndolo en ramas dedicadas para cada *feature*, 
 *   `feature/stage-2-seeder`: Implementación del script de sembrado automatizado de datos.
 *   `feature/stage-3-api`: Creación de controladores, enrutadores de Express, endpoints y consultas Cypher correspondientes.
 *   `feature/stage-4-docs`: Creación de la documentación completa del proyecto (`README.md`).
+*   `feature/stage-5-frontend`: Reestructuración y conexión del cliente web React con el backend Neo4j a través de fetch.

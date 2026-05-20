@@ -10,6 +10,7 @@ const app = express();
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(express.static('FrontEnd'));
 
 // Rutas
 app.use('/api/usuarios', usuariosRoutes);
