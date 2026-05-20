@@ -1,25 +1,14 @@
-# Explicación de la Feature: Etapa 5 - Integración Frontend y Servidor Completo
+# Explicación de la Feature: Etapa 6 - Correcciones UI y Filtros Avanzados
 
-Esta rama (`feature/stage-5-frontend`) consolida el proyecto unificando el backend de Neo4j con el cliente web de React.
+Esta rama (`feature/stage-6-ui-filters`) incluye arreglos estéticos solicitados y una importante mejora en el motor del Buscador Inteligente, unificando filtrado por propiedades y filtrado por relaciones en Neo4j.
 
 ## Qué hace esta etapa
 
-1.  **Servidor Estático y Renombre:**
-    *   Se renombró la carpeta cliente a `FrontEnd`.
-    *   Se configuró `express.static('FrontEnd')` en `app.js` para exponer el cliente en el puerto 3000 de forma automática.
+1.  **Arreglos Estéticos (Frontend):**
+    *   **Barra de Búsqueda:** Se solucionó el problema del ícono de lupa duplicado en `browse.jsx` eliminando el componente superpuesto.
+    *   **Tema de "Mi Cocina":** Se reescribió el esquema de colores de la sección de Recomendaciones Colaborativas (`profile.jsx`). Pasó de usar variables oscuras a variables claras (`var(--cream)` y `var(--paper)`), logrando una integración visual armónica con el resto de la interfaz.
 
-2.  **Adaptación y Nuevos Endpoints:**
-    *   Se incluyeron las proyecciones de `categoria` y `creador` a las consultas de Cypher de los endpoints pre-existentes (`/api/recetas` y `/api/recetas/buscar`) requeridas para que el FrontEnd arme sus tarjetas (`RecipeCard`).
-    *   Se desarrollaron cuatro endpoints nuevos en los controladores, totalmente cubiertos por Neo4j:
-        *   `POST /api/usuarios/login`
-        *   `POST /api/usuarios/:nombre/favoritos/toggle`
-        *   `GET /api/recetas/categorias`
-        *   `GET /api/recetas/ingredientes`
-
-3.  **Cliente API Real y Reescritura del Mock:**
-    *   El archivo simulador del front (`FrontEnd/src/api.js`) se reescribió de manera completa y elegante.
-    *   Ahora ejecuta llamadas HTTP (`fetch`) verdaderas asincrónicas a la API REST.
-    *   Implementa un sistema de caché síncrono al arranque para no quebrar las interfaces de React existentes para la carga de componentes como menús de `categorias` o inputs predictivos de `todosIngredientes`.
-
-4.  **Flujo Fullstack:**
-    *   Desde este punto, arrancar con `node server.js` levanta de forma simultánea el cliente React y el servidor Express. Toda interacción del cliente viaja a la API y la API consulta y muta datos reales directamente desde el cluster gráfico de **Neo4j Aura**.
+2.  **Buscador Inteligente Evolucionado:**
+    *   **Interfaz de Usuario (`search.jsx`):** Se integraron tres listas desplegables (Categoría, Dificultad, Tiempo) para permitir filtrado tradicional cruzado con el buscador de ingredientes.
+    *   **Cliente API (`api.js`):** La función `buscarPorIngredientes` ahora recolecta estos tres nuevos parámetros de manera opcional y construye el query string para HTTP.
+    *   **Neo4j y Backend (`recetasController.js`):** Se modificó la consulta Cypher compleja. Ahora, antes de contar coincidencias de ingredientes con la relación `CONTIENE`, filtra preventivamente los nodos `Receta` asegurándose de que cumplan con la `categoria` (vía relación `PERTENECE_A`) y con las propiedades internas `dificultad` y `tiempo` (usando lógica `$param IS NULL OR r.prop = $param`). Esto optimiza enormemente el rendimiento en el motor de grafos.

@@ -117,11 +117,14 @@
     return handleResponse(res);
   };
 
-  api.buscarPorIngredientes = async ({ tengo = [], noQuiero = [] }) => {
+  api.buscarPorIngredientes = async ({ tengo = [], noQuiero = [], categoria, dificultad, tiempo }) => {
     await delay();
     const params = new URLSearchParams();
     if (tengo.length > 0) params.append('tengo', tengo.join(','));
     if (noQuiero.length > 0) params.append('noQuiero', noQuiero.join(','));
+    if (categoria) params.append('categoria', categoria);
+    if (dificultad) params.append('dificultad', dificultad);
+    if (tiempo) params.append('tiempo', tiempo);
     
     const res = await fetch(`/api/recetas/buscar?${params.toString()}`);
     return handleResponse(res);
