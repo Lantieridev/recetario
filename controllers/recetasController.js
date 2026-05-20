@@ -168,7 +168,7 @@ export const listarRecetas = async (req, res) => {
 // GET /api/recetas/buscar
 // Query params: tengo (lista separada por coma), noQuiero (lista separada por coma)
 export const buscarRecetas = async (req, res) => {
-    const { tengo, noQuiero } = req.query;
+    const { tengo, noQuiero, categoria, dificultad, tiempo } = req.query;
 
     const ingredientes_tengo = tengo ? tengo.split(',').map(i => i.trim()).filter(Boolean) : [];
     const ingredientes_no_quiero = noQuiero ? noQuiero.split(',').map(i => i.trim()).filter(Boolean) : [];
@@ -181,7 +181,10 @@ export const buscarRecetas = async (req, res) => {
     try {
         const query = `
             MATCH (r:Receta)
-            WHERE NOT EXISTS {
+            WHERE ($categoria IS NULL OR (r)-[:PERTENECE_A]->(:Categoria {nombre: $categoria}))
+              AND ($dificultad IS NULL OR r.dificultad = $dificultad)
+              AND ($tiempo IS NULL OR r.tiempo = $tiempo)
+              AND NOT EXISTS {
                 MATCH (r)-[:CONTIENE]->(ex:Ingrediente)
                 WHERE ex.nombre IN $ingredientes_no_quiero
             }
@@ -201,7 +204,10 @@ export const buscarRecetas = async (req, res) => {
 
         const result = await session.run(query, {
             ingredientes_tengo,
-            ingredientes_no_quiero
+            ingredientes_no_quiero,
+            categoria: categoria || null,
+            dificultad: dificultad || null,
+            tiempo: tiempo || null
         });
 
         const resultados = result.records.map(record => {
