@@ -84,26 +84,27 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
       {recommendations.length > 0 && (
         <section className="container" style={{ padding: '24px 32px 48px' }}>
           <div style={{
-            background: 'var(--ink)',
-            color: 'var(--paper)',
+            background: 'var(--cream)',
+            border: '1px solid var(--rule)',
+            color: 'var(--ink)',
             borderRadius: 'var(--radius-xl)',
             padding: 36,
             position: 'relative',
             overflow: 'hidden',
           }}>
             <div style={{ position: 'relative', zIndex: 2 }}>
-              <div className="eyebrow" style={{ color: 'var(--accent-2)', marginBottom: 12 }}>
+              <div className="eyebrow" style={{ color: 'var(--accent)', marginBottom: 12 }}>
                 <Icon name="sparkle" size={11} /> Recomendaciones para vos
               </div>
               <h2 className="font-display" style={{
                 fontSize: 36,
                 margin: '0 0 6px',
-                color: 'var(--paper)',
+                color: 'var(--ink)',
                 letterSpacing: '-0.02em',
               }}>
                 Otros con tus gustos también guardaron…
               </h2>
-              <p style={{ color: 'rgba(245,239,228,.6)', margin: '0 0 28px', fontSize: 14, maxWidth: 540 }}>
+              <p className="text-muted" style={{ margin: '0 0 28px', fontSize: 14, maxWidth: 540 }}>
                 Calculado con filtro colaborativo sobre los favoritos de toda la comunidad.
               </p>
 
@@ -123,7 +124,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
               right: -30, bottom: -90,
               fontSize: 320,
               lineHeight: 1,
-              color: 'rgba(245,239,228,.04)',
+              color: 'var(--rule)',
               pointerEvents: 'none',
               userSelect: 'none',
             }}>
@@ -236,16 +237,16 @@ const RecommendationCard = ({ rec, onOpen, onFav }) => (
     onClick={onOpen}
     style={{
       textAlign: 'left',
-      background: 'rgba(245,239,228,.04)',
-      border: '1px solid rgba(245,239,228,.08)',
+      background: 'var(--paper)',
+      border: '1px solid var(--rule)',
       borderRadius: 'var(--radius)',
       padding: 16,
-      color: 'var(--paper)',
+      color: 'var(--ink)',
       transition: 'background-color .2s, transform .2s',
       display: 'flex', flexDirection: 'column', gap: 12,
     }}
-    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245,239,228,.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(245,239,228,.04)'; e.currentTarget.style.transform = ''; }}
+    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.transform = ''; }}
   >
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <span style={{
@@ -265,20 +266,20 @@ const RecommendationCard = ({ rec, onOpen, onFav }) => (
         aria-label="Guardar"
         style={{
           width: 28, height: 28, borderRadius: 999,
-          color: 'rgba(245,239,228,.6)',
+          color: 'var(--ink-3)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
         <Icon name="bookmark" size={14}/>
       </button>
     </div>
-    <div className="font-display" style={{ fontSize: 24, lineHeight: 1.15, color: 'var(--paper)', letterSpacing: '-0.015em', textWrap: 'balance' }}>
+    <div className="font-display" style={{ fontSize: 24, lineHeight: 1.15, color: 'var(--ink)', letterSpacing: '-0.015em', textWrap: 'balance' }}>
       {rec.receta}
     </div>
-    <div style={{ fontSize: 13, color: 'rgba(245,239,228,.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+    <div style={{ fontSize: 13, color: 'var(--ink-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
       {rec.descripcion}
     </div>
-    <div style={{ display: 'flex', gap: 12, marginTop: 'auto', fontSize: 12, color: 'rgba(245,239,228,.5)' }}>
+    <div style={{ display: 'flex', gap: 12, marginTop: 'auto', fontSize: 12, color: 'var(--ink-3)' }}>
       <span>{rec.tiempo}</span>
       <span>·</span>
       <span>{rec.dificultad}</span>

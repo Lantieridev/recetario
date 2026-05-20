@@ -190,8 +190,8 @@ TP2_Neo4j/
 
 ### 8. Buscador Inteligente (Consulta Compleja 2 - Grafo Completo)
 *   **Ruta:** `GET /api/recetas/buscar`
-*   **Parámetros query:** `tengo` (Ingredientes separados por coma), `noQuiero` (Ingredientes a excluir separados por coma)
-*   **Explicación:** Filtra recetas descartando las que contengan ingredientes no deseados. Luego, analiza las recetas restantes buscando ingredientes que sí se poseen, indicando la cantidad de coincidencias y recolectando una lista dinámica con el nombre de todos los ingredientes faltantes.
+*   **Parámetros query:** `tengo` (Ingredientes separados por coma), `noQuiero` (Ingredientes a excluir separados por coma). **Opcionales:** `categoria`, `dificultad`, `tiempo`.
+*   **Explicación:** Filtra recetas descartando las que contengan ingredientes no deseados y aplicando filtros tradicionales (categoría, etc). Luego, analiza las recetas restantes buscando ingredientes que sí se poseen, indicando la cantidad de coincidencias y recolectando una lista dinámica con el nombre de todos los ingredientes faltantes.
 *   **Cypher:**
     ```cypher
     MATCH (r:Receta)

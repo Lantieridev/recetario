@@ -10,12 +10,15 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
+  const [tiempos, setTiempos] = useState([]);
+  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempo: '' });
   const [favs, setFavs] = useState(new Set());
   const toast = useToast();
 
   useEffect(() => {
     setAllIngs(window.api.todosIngredientes());
     window.api.obtenerUsuario(user.nombre).then(r => setFavs(new Set(r.usuario.recetasFavoritas)));
+    window.api.listarRecetas().then(r => setTiempos([...new Set(r.recetas.map(rec => rec.tiempo))].sort()));
   }, [user]);
 
   const suggestions = useMemo(() => {
@@ -47,7 +50,7 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
     }
     setLoading(true);
     try {
-      const res = await window.api.buscarPorIngredientes({ tengo, noQuiero });
+      const res = await window.api.buscarPorIngredientes({ tengo, noQuiero, ...filters });
       setResults(res);
     } catch (err) {
       toast(err.error || 'Error');
@@ -57,7 +60,7 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   };
 
   const clearAll = () => {
-    setTengo([]); setNoQuiero([]); setResults(null); setInput('');
+    setTengo([]); setNoQuiero([]); setResults(null); setInput(''); setFilters({ categoria: '', dificultad: '', tiempo: '' });
   };
 
   const toggleFav = async (titulo) => {
@@ -100,6 +103,24 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
           borderRadius: 'var(--radius-xl)',
           padding: 28,
         }}>
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
+            <select className="select" value={filters.categoria} onChange={(e) => setFilters(f => ({ ...f, categoria: e.target.value }))}>
+              <option value="">Toda categoría</option>
+              {window.api.categorias().map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="select" value={filters.dificultad} onChange={(e) => setFilters(f => ({ ...f, dificultad: e.target.value }))}>
+              <option value="">Toda dificultad</option>
+              <option value="Baja">Baja</option>
+              <option value="Media">Media</option>
+              <option value="Alta">Alta</option>
+            </select>
+            <select className="select" value={filters.tiempo} onChange={(e) => setFilters(f => ({ ...f, tiempo: e.target.value }))}>
+              <option value="">Cualquier tiempo</option>
+              {tiempos.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 20, padding: 4, background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 999, width: 'fit-content' }}>
             <TabButton active={active === 'tengo'} onClick={() => setActive('tengo')}>

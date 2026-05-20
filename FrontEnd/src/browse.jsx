@@ -204,7 +204,6 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
         <div className="container" style={{ padding: '16px 32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: '1 1 280px', minWidth: 240 }}>
-              <Icon name="search" size={16} />
               <input
                 className="input"
                 placeholder="Buscar por nombre, descripción o autor…"
