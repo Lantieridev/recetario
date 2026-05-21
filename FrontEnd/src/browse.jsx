@@ -164,6 +164,7 @@ const matchesTiempoRango = (tiempo, rango) => {
 
 const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempoRango: '' });
+  const [sortBy, setSortBy] = useState('');
   const [query, setQuery] = useState('');
   const [layout, setLayout] = useState('grid');
   const [data, setData] = useState({ recetas: [], total: 0 });
@@ -194,14 +195,29 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
     if (filters.tiempoRango) {
       list = list.filter(r => matchesTiempoRango(r.tiempo, filters.tiempoRango));
     }
-    if (!query.trim()) return list;
-    const q = query.toLowerCase();
-    return list.filter(r =>
-      r.titulo.toLowerCase().includes(q) ||
-      r.descripcion.toLowerCase().includes(q) ||
-      r.creador.toLowerCase().includes(q)
-    );
-  }, [data.recetas, query, filters.tiempoRango]);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter(r =>
+        r.titulo.toLowerCase().includes(q) ||
+        r.descripcion.toLowerCase().includes(q) ||
+        r.creador.toLowerCase().includes(q)
+      );
+    }
+    if (sortBy === 'asc') {
+      list = [...list].sort((a, b) => {
+        const tA = parseMinutes(a.tiempo) || 0;
+        const tB = parseMinutes(b.tiempo) || 0;
+        return tA - tB;
+      });
+    } else if (sortBy === 'desc') {
+      list = [...list].sort((a, b) => {
+        const tA = parseMinutes(a.tiempo) || 0;
+        const tB = parseMinutes(b.tiempo) || 0;
+        return tB - tA;
+      });
+    }
+    return list;
+  }, [data.recetas, query, filters.tiempoRango, sortBy]);
 
   const toggleFav = async (titulo) => {
     const res = await window.api.toggleFavorito(user.nombre, titulo);
@@ -214,7 +230,7 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   };
 
   const cats = window.api.categorias();
-  const activeFilters = Object.values(filters).filter(Boolean).length;
+  const hasActiveFilters = Object.values(filters).some(Boolean) || sortBy !== '';
 
   return (
     <div data-screen-label="Browse" className="fade-in">
@@ -279,8 +295,13 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
                 <option value="">Cualquier tiempo</option>
                 {TIME_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
               </select>
-              {activeFilters > 0 && (
-                <button className="btn btn-link" onClick={() => setFilters({ categoria: '', dificultad: '', tiempoRango: '' })}>
+              <select className="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="">Orden: Por defecto</option>
+                <option value="asc">Tiempo: Menor a Mayor</option>
+                <option value="desc">Tiempo: Mayor a Menor</option>
+              </select>
+              {hasActiveFilters && (
+                <button className="btn btn-link" onClick={() => { setFilters({ categoria: '', dificultad: '', tiempoRango: '' }); setSortBy(''); }}>
                   Limpiar
                 </button>
               )}
@@ -342,7 +363,7 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
             icon="search"
             title="Sin resultados"
             action={
-              <Button variant="ghost" onClick={() => { setFilters({ categoria: '', dificultad: '', tiempo: '' }); setQuery(''); }}>
+              <Button variant="ghost" onClick={() => { setFilters({ categoria: '', dificultad: '', tiempoRango: '' }); setSortBy(''); setQuery(''); }}>
                 Limpiar todos los filtros
               </Button>
             }
