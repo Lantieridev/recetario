@@ -133,8 +133,37 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
 
 // ─────────────────────────────────────────────────────────────
 
+const TIME_RANGES = [
+  { key: 'lt15',  label: '< 15 min',  max: 15 },
+  { key: '15-30', label: '15–30 min', min: 15, max: 30 },
+  { key: '30-60', label: '30–60 min', min: 30, max: 60 },
+  { key: '1-2h',  label: '1–2 horas', min: 60, max: 120 },
+  { key: 'gt2h',  label: '+2 horas',  min: 120 },
+];
+
+const parseMinutes = (str) => {
+  if (!str) return null;
+  let mins = 0;
+  const h = str.match(/(\d+(?:\.\d+)?)\s*(?:hora|h)/i);
+  const m = str.match(/(\d+)\s*(?:min|m)/i);
+  if (h) mins += parseFloat(h[1]) * 60;
+  if (m) mins += parseInt(m[1]);
+  return mins > 0 ? mins : null;
+};
+
+const matchesTiempoRango = (tiempo, rango) => {
+  if (!rango) return true;
+  const mins = parseMinutes(tiempo);
+  if (mins === null) return false;
+  const r = TIME_RANGES.find(t => t.key === rango);
+  if (!r) return true;
+  if (r.min !== undefined && mins < r.min) return false;
+  if (r.max !== undefined && mins >= r.max) return false;
+  return true;
+};
+
 const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
-  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempo: '' });
+  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempoRango: '' });
   const [query, setQuery] = useState('');
   const [layout, setLayout] = useState('grid');
   const [data, setData] = useState({ recetas: [], total: 0 });
@@ -148,12 +177,11 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
     window.api.listarRecetas({
       categoria: filters.categoria || undefined,
       dificultad: filters.dificultad || undefined,
-      tiempo: filters.tiempo || undefined,
     }).then(res => {
       if (alive) { setData(res); setLoading(false); }
     });
     return () => { alive = false; };
-  }, [filters]);
+  }, [filters.categoria, filters.dificultad]);
 
   useEffect(() => {
     window.api.obtenerUsuario(user.nombre).then(r => {
@@ -162,14 +190,18 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   }, [user]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return data.recetas;
+    let list = data.recetas;
+    if (filters.tiempoRango) {
+      list = list.filter(r => matchesTiempoRango(r.tiempo, filters.tiempoRango));
+    }
+    if (!query.trim()) return list;
     const q = query.toLowerCase();
-    return data.recetas.filter(r =>
+    return list.filter(r =>
       r.titulo.toLowerCase().includes(q) ||
       r.descripcion.toLowerCase().includes(q) ||
       r.creador.toLowerCase().includes(q)
     );
-  }, [data.recetas, query]);
+  }, [data.recetas, query, filters.tiempoRango]);
 
   const toggleFav = async (titulo) => {
     const res = await window.api.toggleFavorito(user.nombre, titulo);
@@ -243,12 +275,12 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
                 <option value="Media">Media</option>
                 <option value="Alta">Alta</option>
               </select>
-              <select className="select" value={filters.tiempo} onChange={(e) => setFilters(f => ({ ...f, tiempo: e.target.value }))}>
+              <select className="select" value={filters.tiempoRango} onChange={(e) => setFilters(f => ({ ...f, tiempoRango: e.target.value }))}>
                 <option value="">Cualquier tiempo</option>
-                {[...new Set(data.recetas.map(r => r.tiempo))].sort().map(t => <option key={t} value={t}>{t}</option>)}
+                {TIME_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
               </select>
               {activeFilters > 0 && (
-                <button className="btn btn-link" onClick={() => setFilters({ categoria: '', dificultad: '', tiempo: '' })}>
+                <button className="btn btn-link" onClick={() => setFilters({ categoria: '', dificultad: '', tiempoRango: '' })}>
                   Limpiar
                 </button>
               )}
