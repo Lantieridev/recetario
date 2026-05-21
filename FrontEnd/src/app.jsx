@@ -234,6 +234,7 @@ const App = () => {
         <DetailScreen
           titulo={route.titulo}
           user={user}
+          initialData={route.initialData}
           onBack={() => setRoute({ name: route.from || 'browse' })}
           onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: route.from || 'browse' })}
         />
@@ -253,6 +254,7 @@ const App = () => {
           user={user}
           onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: 'profile' })}
           onCreateRecipe={() => setRoute({ name: 'create' })}
+          onExploreRecipes={() => setRoute({ name: 'browse' })}
         />
       );
       break;
@@ -261,7 +263,7 @@ const App = () => {
         <CreateRecipeScreen
           user={user}
           onBack={() => setRoute({ name: 'browse' })}
-          onCreated={(t) => setRoute({ name: 'detail', titulo: t, from: 'browse' })}
+          onCreated={(t, initialData) => setRoute({ name: 'detail', titulo: t, from: 'browse', initialData })}
         />
       );
       break;

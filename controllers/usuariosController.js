@@ -1,5 +1,6 @@
 import { getSession } from '../config/neo4j.js';
 import neo4j from 'neo4j-driver';
+import { formatDuration } from '../utils/timeFormatter.js';
 
 // 1. Crear Usuario
 // POST /api/usuarios
@@ -145,8 +146,8 @@ export const obtenerRecomendaciones = async (req, res) => {
             return res.status(404).json({ error: `Usuario '${nombre}' no encontrado` });
         }
 
-        // Consulta de recomendación colaborativa avanzada (Graph Traversal)
-        const query = `
+        // 1. Intento: filtro colaborativo (usuarios con gustos similares)
+        const colaborativaQuery = `
             MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(:Receta)<-[:GUARDO_FAV]-(otro:Usuario)
             MATCH (otro)-[:GUARDO_FAV]->(recomendacion:Receta)
             WHERE NOT (yo)-[:GUARDO_FAV]->(recomendacion)
@@ -159,23 +160,50 @@ export const obtenerRecomendaciones = async (req, res) => {
             LIMIT 5
         `;
 
-        const result = await session.run(query, { nombre });
+        const colaborativaResult = await session.run(colaborativaQuery, { nombre });
 
-        const recomendaciones = result.records.map(record => {
+        let recomendaciones = colaborativaResult.records.map(record => {
             const nivelDeMatch = record.get('NivelDeMatch');
-            // Convertir número Neo4j (que puede ser un objeto Integer de la librería) a número JS estándar
-            const matchCount = neo4j.isInt(nivelDeMatch) 
-                ? nivelDeMatch.toNumber() 
-                : Number(nivelDeMatch);
-
+            const matchCount = neo4j.isInt(nivelDeMatch) ? nivelDeMatch.toNumber() : Number(nivelDeMatch);
             return {
                 receta: record.get('Recomendacion'),
                 descripcion: record.get('Descripcion'),
                 dificultad: record.get('Dificultad'),
-                tiempo: record.get('Tiempo'),
-                nivelDeMatch: matchCount
+                tiempo: formatDuration(record.get('Tiempo')),
+                nivelDeMatch: matchCount,
+                tipo: 'colaborativa'
             };
         });
+
+        // 2. Fallback: si no hay colaborativas, mostrar las más populares que el usuario no tenga
+        if (recomendaciones.length === 0) {
+            const popularQuery = `
+                MATCH (r:Receta)
+                WHERE NOT ((:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r))
+                OPTIONAL MATCH (u:Usuario)-[:GUARDO_FAV]->(r)
+                OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
+                RETURN r.titulo AS Recomendacion,
+                       r.descripcion AS Descripcion,
+                       r.dificultad AS Dificultad,
+                       r.tiempo AS Tiempo,
+                       COUNT(u) AS NivelDeMatch
+                ORDER BY NivelDeMatch DESC
+                LIMIT 5
+            `;
+            const popularResult = await session.run(popularQuery, { nombre });
+            recomendaciones = popularResult.records.map(record => {
+                const nivelDeMatch = record.get('NivelDeMatch');
+                const matchCount = neo4j.isInt(nivelDeMatch) ? nivelDeMatch.toNumber() : Number(nivelDeMatch);
+                return {
+                    receta: record.get('Recomendacion'),
+                    descripcion: record.get('Descripcion'),
+                    dificultad: record.get('Dificultad'),
+                    tiempo: formatDuration(record.get('Tiempo')),
+                    nivelDeMatch: matchCount,
+                    tipo: 'popular'
+                };
+            });
+        }
 
         res.status(200).json({
             usuario: nombre,

@@ -2,10 +2,20 @@
 // Browse — listado de recetas con filtros (categoría, dificultad, tiempo) + búsqueda por texto
 
 const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen?.();
+    }
+  };
+
   if (layout === 'list') {
     return (
-      <button
+      <div
         onClick={onOpen}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
         className="card card-hover focus-ring"
         style={{
           display: 'grid',
@@ -15,6 +25,7 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
           textAlign: 'left',
           width: '100%',
           alignItems: 'center',
+          cursor: 'pointer',
         }}
       >
         <div style={{ width: 180, height: 110 }}>
@@ -44,13 +55,16 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
           <Tiempo value={receta.tiempo} />
           <Dificultad value={receta.dificultad} />
         </div>
-      </button>
+      </div>
     );
   }
 
   return (
-    <button
+    <div
       onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
       className="card card-hover focus-ring"
       style={{
         padding: 0,
@@ -59,6 +73,8 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
         display: 'flex',
         flexDirection: 'column',
         background: 'var(--paper)',
+        height: '100%',
+        cursor: 'pointer',
       }}
     >
       <div style={{ position: 'relative', padding: 12 }}>
@@ -111,7 +127,7 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
           <Dificultad value={receta.dificultad} />
         </div>
       </div>
-    </button>
+    </div>
   );
 };
 

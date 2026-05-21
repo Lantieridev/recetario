@@ -187,20 +187,7 @@ const RecipeCover = ({ titulo, categoria, height = 220, compact = false }) => {
         <rect width="100%" height="100%" fill={`url(#p-${seed})`}/>
       </svg>
 
-      {/* numerical mark like an old cookbook */}
-      <div
-        style={{
-          position: 'absolute',
-          top: compact ? 12 : 18,
-          left: compact ? 14 : 20,
-          color: 'rgba(251,247,239,.85)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: compact ? 11 : 12,
-          letterSpacing: '0.08em',
-        }}
-      >
-        № {String((seed % 99) + 1).padStart(2, '0')}
-      </div>
+
 
       {/* title */}
       <div

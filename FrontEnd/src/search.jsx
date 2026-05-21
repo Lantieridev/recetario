@@ -11,14 +11,42 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   const [loading, setLoading] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
   const [tiempos, setTiempos] = useState([]);
-  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempo: '' });
+  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempoRango: '' });
   const [favs, setFavs] = useState(new Set());
   const toast = useToast();
+
+  const TIME_RANGES = [
+    { key: 'lt15',  label: '< 15 min',  max: 15 },
+    { key: '15-30', label: '15–30 min', min: 15, max: 30 },
+    { key: '30-60', label: '30–60 min', min: 30, max: 60 },
+    { key: '1-2h',  label: '1–2 horas', min: 60, max: 120 },
+    { key: 'gt2h',  label: '+2 horas',  min: 120 },
+  ];
+
+  const parseMinutes = (str) => {
+    if (!str) return null;
+    let mins = 0;
+    const h = str.match(/(\d+(?:\.\d+)?)\s*(?:hora|h)/i);
+    const m = str.match(/(\d+)\s*(?:min|m)/i);
+    if (h) mins += parseFloat(h[1]) * 60;
+    if (m) mins += parseInt(m[1]);
+    return mins > 0 ? mins : null;
+  };
+
+  const matchesTiempoRango = (tiempo, rango) => {
+    if (!rango) return true;
+    const mins = parseMinutes(tiempo);
+    if (mins === null) return false;
+    const r = TIME_RANGES.find(t => t.key === rango);
+    if (!r) return true;
+    if (r.min !== undefined && mins < r.min) return false;
+    if (r.max !== undefined && mins >= r.max) return false;
+    return true;
+  };
 
   useEffect(() => {
     setAllIngs(window.api.todosIngredientes());
     window.api.obtenerUsuario(user.nombre).then(r => setFavs(new Set(r.usuario.recetasFavoritas)));
-    window.api.listarRecetas().then(r => setTiempos([...new Set(r.recetas.map(rec => rec.tiempo))].sort()));
   }, [user]);
 
   const suggestions = useMemo(() => {
@@ -50,8 +78,12 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
     }
     setLoading(true);
     try {
-      const res = await window.api.buscarPorIngredientes({ tengo, noQuiero, ...filters });
-      setResults(res);
+      const res = await window.api.buscarPorIngredientes({ tengo, noQuiero, categoria: filters.categoria, dificultad: filters.dificultad });
+      // Filtrar por rango de tiempo en el cliente
+      const resultados = filters.tiempoRango
+        ? { ...res, resultados: res.resultados.filter(r => matchesTiempoRango(r.tiempo, filters.tiempoRango)) }
+        : res;
+      setResults(resultados);
     } catch (err) {
       toast(err.error || 'Error');
     } finally {
@@ -60,10 +92,16 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   };
 
   const clearAll = () => {
-    setTengo([]); setNoQuiero([]); setResults(null); setInput(''); setFilters({ categoria: '', dificultad: '', tiempo: '' });
+    setTengo([]); setNoQuiero([]); setResults(null); setInput(''); setFilters({ categoria: '', dificultad: '', tiempoRango: '' });
   };
 
   const toggleFav = async (titulo) => {
+    // Actualización optimista
+    setFavs(prev => {
+      const n = new Set(prev);
+      if (n.has(titulo)) n.delete(titulo); else n.add(titulo);
+      return n;
+    });
     const res = await window.api.toggleFavorito(user.nombre, titulo);
     setFavs(prev => {
       const n = new Set(prev);
@@ -115,9 +153,9 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
             </select>
-            <select className="select" value={filters.tiempo} onChange={(e) => setFilters(f => ({ ...f, tiempo: e.target.value }))}>
+            <select className="select" value={filters.tiempoRango} onChange={(e) => setFilters(f => ({ ...f, tiempoRango: e.target.value }))}>
               <option value="">Cualquier tiempo</option>
-              {tiempos.map(t => <option key={t} value={t}>{t}</option>)}
+              {TIME_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
             </select>
           </div>
 
@@ -339,6 +377,9 @@ const SearchResultCard = ({ result, onOpen, isFav, onFav, rank, topMatch }) => {
   return (
     <div
       onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}
+      role="button"
+      tabIndex={0}
       className="card card-hover focus-ring"
       style={{
         display: 'grid',
@@ -348,8 +389,6 @@ const SearchResultCard = ({ result, onOpen, isFav, onFav, rank, topMatch }) => {
         alignItems: 'center',
         cursor: 'pointer',
       }}
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
     >
       <div className="font-display" style={{ fontSize: 38, color: 'var(--ink-3)', letterSpacing: '-0.03em', textAlign: 'center' }}>
         {String(rank).padStart(2, '0')}

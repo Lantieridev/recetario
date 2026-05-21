@@ -9,11 +9,13 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     descripcion: '',
     categoria: '',
     dificultad: 'Media',
-    tiempo: '30 min',
-    pasos: '',
+    tiempoVal: '30',
+    tiempoUnidad: 'minutos',
+    porciones: '4',
+    pasos: [''],
   });
   const [ingredients, setIngredients] = useState([]);
-  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidad: '' });
+  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [suggested, setSuggested] = useState([]);
@@ -23,27 +25,70 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
   const cats = window.api.categorias();
 
-  const canStep1 = form.titulo && form.descripcion && form.categoria && form.pasos;
+  const canStep1 = form.titulo && form.descripcion && form.categoria && form.pasos.some(p => p.trim() !== '');
   const canSubmit = canStep1 && ingredients.length > 0;
 
   const addIngredient = () => {
-    if (!ingDraft.nombre || !ingDraft.cantidad) {
-      toast('Completá ambos campos');
+    if (!ingDraft.nombre) {
+      toast('Completá el nombre del ingrediente');
       return;
     }
+    const noRequiereValor = ingDraft.cantidadUnidad === 'a gusto';
+    if (!noRequiereValor) {
+      if (!ingDraft.cantidadVal) {
+        toast('Completá la cantidad');
+        return;
+      }
+      const val = parseFloat(ingDraft.cantidadVal);
+      if (isNaN(val) || val <= 0) {
+        toast('La cantidad debe ser mayor a 0');
+        return;
+      }
+    }
+    const finalCantidad = noRequiereValor ? ingDraft.cantidadUnidad : `${ingDraft.cantidadVal} ${ingDraft.cantidadUnidad}`;
     if (ingredients.some(i => i.nombre.toLowerCase() === ingDraft.nombre.toLowerCase())) {
       toast('Ya está en la lista');
       return;
     }
-    setIngredients([...ingredients, { ...ingDraft }]);
-    setIngDraft({ nombre: '', cantidad: '' });
+    setIngredients([...ingredients, { nombre: ingDraft.nombre, cantidad: finalCantidad }]);
+    setIngDraft({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos' });
   };
 
   const submit = async () => {
     setSaving(true);
     setError(null);
     try {
-      await window.api.crearReceta({ ...form, creador: user.nombre });
+      const cleanStepText = (text) => {
+        return text
+          .replace(/\r\n/g, '\n')
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line !== '')
+          .join('\n')
+          .trim();
+      };
+      // Convierte minutos a formato legible: si pasan de 60, usa horas
+      const formatTiempo = (val, unidad) => {
+        const n = parseInt(val) || 0;
+        const totalMins = unidad === 'horas' ? n * 60 : n;
+        if (totalMins < 60) return `${totalMins} min`;
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        if (m === 0) return `${h}h`;
+        return `${h}h ${m}min`;
+      };
+
+      const payload = {
+        titulo: form.titulo,
+        descripcion: form.descripcion,
+        categoria: form.categoria,
+        dificultad: form.dificultad,
+        tiempo: formatTiempo(form.tiempoVal, form.tiempoUnidad),
+        porciones: parseInt(form.porciones) || 4,
+        pasos: form.pasos.map(cleanStepText).filter(p => p !== '').map((p, i) => `${i + 1}. ${p}`).join(' '),
+        creador: user.nombre
+      };
+      await window.api.crearReceta(payload);
       // Asociar ingredientes uno por uno (replica el endpoint real)
       for (const ing of ingredients) {
         await window.api.agregarIngrediente(form.titulo, {
@@ -53,7 +98,18 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
       }
       toast('¡Receta publicada!');
       setStep(3);
-      setTimeout(() => onCreated(form.titulo), 1100);
+      const initialData = {
+        titulo: payload.titulo,
+        descripcion: payload.descripcion,
+        categoria: payload.categoria,
+        dificultad: payload.dificultad,
+        tiempo: payload.tiempo,
+        porciones: payload.porciones,
+        pasos: payload.pasos,
+        creador: payload.creador,
+        ingredientes: ingredients
+      };
+      setTimeout(() => onCreated(form.titulo, initialData), 1100);
     } catch (err) {
       setError(err.error || 'No pudimos guardar la receta');
     } finally {
@@ -111,7 +167,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
                 <div className="field">
                   <label className="field-label">Categoría</label>
                   <select className="select" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
@@ -142,25 +198,82 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                 </div>
                 <div className="field">
                   <label className="field-label">Tiempo</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="number"
+                      min="1"
+                      className="input"
+                      placeholder="30"
+                      style={{ flex: 1 }}
+                      value={form.tiempoVal}
+                      onChange={(e) => setForm({ ...form, tiempoVal: e.target.value })}
+                    />
+                    <select
+                      className="select"
+                      style={{ width: 110 }}
+                      value={form.tiempoUnidad}
+                      onChange={(e) => setForm({ ...form, tiempoUnidad: e.target.value })}
+                    >
+                      <option value="minutos">minutos</option>
+                      <option value="horas">horas</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="field-label">Porciones</label>
                   <input
+                    type="number"
+                    min="1"
                     className="input"
-                    placeholder="30 min"
-                    value={form.tiempo}
-                    onChange={(e) => setForm({ ...form, tiempo: e.target.value })}
+                    placeholder="Ej: 4"
+                    value={form.porciones}
+                    onChange={(e) => setForm({ ...form, porciones: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="field">
-                <label className="field-label">Pasos</label>
-                <p className="text-muted" style={{ fontSize: 12, marginTop: -4 }}>Numerá cada paso. Ej: "1. Picar la cebolla. 2. Rehogar…"</p>
-                <textarea
-                  className="textarea"
-                  style={{ minHeight: 180, fontFamily: 'var(--font-body)' }}
-                  placeholder="1. Mezclar los ingredientes secos en un bowl…"
-                  value={form.pasos}
-                  onChange={(e) => setForm({ ...form, pasos: e.target.value })}
-                />
+                <label className="field-label" style={{ marginBottom: 4 }}>Pasos</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {form.pasos.map((paso, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 1fr auto', gap: 16, alignItems: 'start' }}>
+                      <div className="font-display" style={{ fontSize: 32, lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--ink-3)', paddingTop: 6 }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </div>
+                      <textarea
+                        className="textarea"
+                        style={{ minHeight: 60 }}
+                        placeholder="Ej: Mezclar los ingredientes secos en un bowl…"
+                        value={paso}
+                        onChange={(e) => {
+                          const n = [...form.pasos];
+                          n[i] = e.target.value;
+                          setForm({ ...form, pasos: n });
+                        }}
+                      />
+                      {form.pasos.length > 1 && (
+                        <button
+                          onClick={() => {
+                            const n = form.pasos.filter((_, idx) => idx !== i);
+                            setForm({ ...form, pasos: n });
+                          }}
+                          className="btn btn-icon btn-ghost btn-sm"
+                          aria-label="Quitar paso"
+                          style={{ marginTop: 8, color: 'var(--ink-3)' }}
+                        >
+                          <Icon name="trash" size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setForm({ ...form, pasos: [...form.pasos, ''] })}
+                    className="btn btn-ghost"
+                    style={{ alignSelf: 'flex-start', marginTop: 8 }}
+                  >
+                    + Agregar otro paso
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -193,7 +306,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
               ¿Qué lleva?
             </h1>
             <p className="text-muted" style={{ marginBottom: 32, fontSize: 16 }}>
-              Sumá los ingredientes con su cantidad. Podés usar "c/n", "a gusto", o medidas como "200g", "1 cdita".
+              Sumá los ingredientes especificando su cantidad y medida exacta.
             </p>
 
             <div style={{
@@ -215,15 +328,36 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                     {suggested.map(s => <option key={s} value={s} />)}
                   </datalist>
                 </div>
-                <div className="field">
+                <div className="field" style={{ minWidth: 200 }}>
                   <label className="field-label">Cantidad</label>
-                  <input
-                    className="input"
-                    placeholder="500g"
-                    value={ingDraft.cantidad}
-                    onChange={(e) => setIngDraft({ ...ingDraft, cantidad: e.target.value })}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
-                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className="input"
+                      placeholder="Ej: 200"
+                      style={{ flex: 1 }}
+                      disabled={ingDraft.cantidadUnidad === 'a gusto'}
+                      value={ingDraft.cantidadVal}
+                      onChange={(e) => setIngDraft({ ...ingDraft, cantidadVal: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
+                    />
+                    <select
+                      className="select"
+                      style={{ width: 130 }}
+                      value={ingDraft.cantidadUnidad}
+                      onChange={(e) => setIngDraft({ ...ingDraft, cantidadUnidad: e.target.value })}
+                    >
+                      <option value="gramos">gramos</option>
+                      <option value="mililitros">mililitros</option>
+                      <option value="tazas">tazas</option>
+                      <option value="cucharadas">cucharadas</option>
+                      <option value="cucharaditas">cucharaditas</option>
+                      <option value="unidades">unidades</option>
+                      <option value="a gusto">a gusto</option>
+                    </select>
+                  </div>
                 </div>
                 <Button variant="primary" icon="plus" onClick={addIngredient} style={{ height: 44 }}>
                   Agregar
@@ -237,7 +371,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                   {['Sal', 'Pimienta', 'Aceite', 'Cebolla', 'Ajo', 'Harina', 'Huevo'].map(s => (
                     <button
                       key={s}
-                      onClick={() => setIngDraft({ nombre: s, cantidad: ingDraft.cantidad })}
+                      onClick={() => setIngDraft({ ...ingDraft, nombre: s })}
                       className="chip"
                       style={{ height: 28, fontSize: 12 }}
                     >

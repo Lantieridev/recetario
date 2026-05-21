@@ -11,10 +11,9 @@ async function seedDatabase() {
     try {
         console.log('⏳ Iniciando el sembrado de la base de datos Neo4j...');
 
-        // Opcional: Limpiar base de datos antes de sembrar
-        // Si quieres habilitarlo, puedes descomentar la siguiente línea
-        // console.log('🧹 Limpiando datos existentes...');
-        // await session.run('MATCH (n) DETACH DELETE n');
+        // Limpiar base de datos antes de sembrar para evitar duplicados
+        console.log('🧹 Limpiando datos existentes...');
+        await session.run('MATCH (n) DETACH DELETE n');
 
         // Leer el archivo .cypher
         const cypherPath = path.join(__dirname, '..', 'poblar_recetario.cypher');

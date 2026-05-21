@@ -1,11 +1,12 @@
 import { getSession } from '../config/neo4j.js';
 import neo4j from 'neo4j-driver';
+import { formatDuration } from '../utils/timeFormatter.js';
 
 // 1. Crear Receta (relacionada con su creador y categoría)
 // POST /api/recetas
 // Body: { titulo, descripcion, dificultad, tiempo, pasos, creador, categoria }
 export const crearReceta = async (req, res) => {
-    const { titulo, descripcion, dificultad, tiempo, pasos, creador, categoria } = req.body;
+    const { titulo, descripcion, dificultad, tiempo, porciones, pasos, creador, categoria } = req.body;
 
     if (!titulo || !descripcion || !dificultad || !tiempo || !pasos || !creador || !categoria) {
         return res.status(400).json({ 
@@ -31,16 +32,16 @@ export const crearReceta = async (req, res) => {
         const query = `
             MATCH (u:Usuario {nombre: $creador})
             MATCH (c:Categoria {nombre: $categoria})
-            CREATE (r:Receta {
-                titulo: $titulo,
-                descripcion: $descripcion,
-                dificultad: $dificultad,
-                tiempo: $tiempo,
-                pasos: $pasos
-            })
-            CREATE (u)-[:CREO]->(r)
-            CREATE (r)-[:PERTENECE_A]->(cat:Categoria {nombre: $categoria})
-            RETURN r.titulo AS titulo, u.nombre AS creador, cat.nombre AS categoria
+            WITH u, c LIMIT 1
+            MERGE (r:Receta {titulo: $titulo})
+            SET r.descripcion = $descripcion,
+                r.dificultad = $dificultad,
+                r.tiempo = $tiempo,
+                r.porciones = $porciones,
+                r.pasos = $pasos
+            MERGE (u)-[:CREO]->(r)
+            MERGE (r)-[:PERTENECE_A]->(c)
+            RETURN r.titulo AS titulo, u.nombre AS creador, c.nombre AS categoria
         `;
 
         const result = await session.run(query, {
@@ -48,6 +49,7 @@ export const crearReceta = async (req, res) => {
             descripcion,
             dificultad,
             tiempo,
+            porciones: parseInt(porciones) || 4,
             pasos,
             creador,
             categoria
@@ -92,6 +94,7 @@ export const agregarIngrediente = async (req, res) => {
 
         const query = `
             MATCH (r:Receta {titulo: $titulo})
+            WITH r LIMIT 1
             MERGE (i:Ingrediente {nombre: $nombreIngrediente})
             MERGE (r)-[c:CONTIENE]->(i)
             SET c.cantidad = $cantidad
@@ -133,7 +136,7 @@ export const listarRecetas = async (req, res) => {
               AND ($tiempo IS NULL OR r.tiempo = $tiempo)
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
-            RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, c.nombre AS categoria, u.nombre AS creador
+            RETURN DISTINCT r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, c.nombre AS categoria, u.nombre AS creador
         `;
 
         const result = await session.run(query, {
@@ -146,7 +149,7 @@ export const listarRecetas = async (req, res) => {
             titulo: record.get('titulo'),
             descripcion: record.get('descripcion'),
             dificultad: record.get('dificultad'),
-            tiempo: record.get('tiempo'),
+            tiempo: formatDuration(record.get('tiempo')),
             categoria: record.get('categoria'),
             creador: record.get('creador')
         }));
@@ -219,7 +222,7 @@ export const buscarRecetas = async (req, res) => {
             return {
                 receta: record.get('Receta'),
                 dificultad: record.get('Dificultad'),
-                tiempo: record.get('Tiempo'),
+                tiempo: formatDuration(record.get('Tiempo')),
                 categoria: record.get('Categoria'),
                 coincidencias: matchCount,
                 queTeFalta: record.get('Que_Te_Falta')
@@ -248,6 +251,7 @@ export const obtenerReceta = async (req, res) => {
     try {
         const query = `
             MATCH (r:Receta {titulo: $titulo})
+            WITH r LIMIT 1
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
             OPTIONAL MATCH (r)-[co:CONTIENE]->(i:Ingrediente)
@@ -255,10 +259,11 @@ export const obtenerReceta = async (req, res) => {
                    r.descripcion AS descripcion,
                    r.dificultad AS dificultad,
                    r.tiempo AS tiempo,
+                   r.porciones AS porciones,
                    r.pasos AS pasos,
                    c.nombre AS categoria,
                    u.nombre AS creador,
-                   collect({ nombre: i.nombre, cantidad: co.cantidad }) AS ingredientes
+                   collect(DISTINCT { nombre: i.nombre, cantidad: co.cantidad }) AS ingredientes
         `;
         const result = await session.run(query, { titulo });
         if (result.records.length === 0 || result.records[0].get('titulo') === null) {
@@ -274,7 +279,8 @@ export const obtenerReceta = async (req, res) => {
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
-                tiempo: record.get('tiempo'),
+                tiempo: formatDuration(record.get('tiempo')),
+                porciones: record.get('porciones') ? (neo4j.isInt(record.get('porciones')) ? record.get('porciones').toNumber() : record.get('porciones')) : 4,
                 pasos: record.get('pasos'),
                 categoria: record.get('categoria'),
                 creador: record.get('creador'),
