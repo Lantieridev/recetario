@@ -1,24 +1,25 @@
 /* eslint-disable */
 // Recipe detail — hero with cover, sticky ingredients panel, numbered steps
 
-const DetailScreen = ({ titulo, user, onBack, onOpenRecipe }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
+  const [data, setData] = useState(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
   const [related, setRelated] = useState([]);
   const [checkedSteps, setCheckedSteps] = useState(new Set());
   const [checkedIngs, setCheckedIngs] = useState(new Set());
-  const [servings, setServings] = useState(4);
+  const [servings, setServings] = useState(initialData ? (initialData.porciones || 4) : 4);
   const toast = useToast();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!data) setLoading(true);
     setCheckedSteps(new Set());
     setCheckedIngs(new Set());
     window.api.detalleReceta(titulo).then(async (res) => {
       if (!alive) return;
       setData(res.receta);
+      setServings(res.receta.porciones || 4);
       setLoading(false);
       // related from same category
       const list = await window.api.listarRecetas({ categoria: res.receta.categoria });
@@ -185,7 +186,7 @@ const DetailScreen = ({ titulo, user, onBack, onOpenRecipe }) => {
                       color: 'var(--ink-3)',
                       textDecoration: checked ? 'line-through' : 'none',
                     }}>
-                      {scaleQty(ing.cantidad, servings)}
+                      {scaleQty(ing.cantidad, servings, data.porciones || 4)}
                     </span>
                   </li>
                 );
@@ -245,6 +246,7 @@ const DetailScreen = ({ titulo, user, onBack, onOpenRecipe }) => {
                       textDecorationColor: 'var(--ink-4)',
                       paddingTop: 6,
                       transition: 'color .2s',
+                      whiteSpace: 'pre-line',
                     }}>
                       {step}
                     </div>
@@ -311,8 +313,7 @@ const Metric = ({ icon, label, value }) => (
 );
 
 // Naive ingredient quantity scaling. Only scales numeric leading values.
-function scaleQty(qty, servings) {
-  const base = 4;
+function scaleQty(qty, servings, base = 4) {
   const factor = servings / base;
   if (factor === 1) return qty;
   const m = qty.match(/^(\d+(?:[\.,/]\d+)?)\s*(.*)$/);

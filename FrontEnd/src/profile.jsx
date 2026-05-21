@@ -1,7 +1,7 @@
 /* eslint-disable */
 // Profile: perfil + recetas creadas + favoritas + recomendaciones colaborativas
 
-const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
+const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes }) => {
   const [profile, setProfile] = useState(null);
   const [recetasMap, setRecetasMap] = useState({});
   const [recommendations, setRecommendations] = useState([]);
@@ -9,8 +9,8 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   const [tab, setTab] = useState('favoritos');
   const toast = useToast();
 
-  const refresh = async () => {
-    setLoading(true);
+  const refresh = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [{ usuario }, recs, { recetas }] = await Promise.all([
       window.api.obtenerUsuario(user.nombre),
       window.api.recomendaciones(user.nombre),
@@ -26,9 +26,19 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   useEffect(() => { refresh(); }, [user]);
 
   const toggleFav = async (titulo) => {
+    // Actualización optimista del estado local para respuesta instantánea en la UI
+    setProfile(prev => {
+      if (!prev) return prev;
+      const isFavorited = prev.recetasFavoritas.includes(titulo);
+      const recetasFavoritas = isFavorited
+        ? prev.recetasFavoritas.filter(t => t !== titulo)
+        : [...prev.recetasFavoritas, titulo];
+      return { ...prev, recetasFavoritas };
+    });
+
     const res = await window.api.toggleFavorito(user.nombre, titulo);
     toast(res.added ? 'Guardada' : 'Quitada de favoritos', { icon: res.added ? 'bookmarkFilled' : 'check' });
-    refresh();
+    refresh(true); // Refresco silencioso en segundo plano
   };
 
   if (loading || !profile) {
@@ -94,7 +104,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
           }}>
             <div style={{ position: 'relative', zIndex: 2 }}>
               <div className="eyebrow" style={{ color: 'var(--accent)', marginBottom: 12 }}>
-                <Icon name="sparkle" size={11} /> Recomendaciones para vos
+                <Icon name="sparkle" size={11} /> {recommendations[0]?.tipo === 'popular' ? 'Tendencia en la comunidad' : 'Recomendaciones para vos'}
               </div>
               <h2 className="font-display" style={{
                 fontSize: 36,
@@ -102,10 +112,12 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
                 color: 'var(--ink)',
                 letterSpacing: '-0.02em',
               }}>
-                Otros con tus gustos también guardaron…
+                {recommendations[0]?.tipo === 'popular' ? 'Las más populares que todavía no probaste' : 'Otros con tus gustos también guardaron…'}
               </h2>
               <p className="text-muted" style={{ margin: '0 0 28px', fontSize: 14, maxWidth: 540 }}>
-                Calculado con filtro colaborativo sobre los favoritos de toda la comunidad.
+                {recommendations[0]?.tipo === 'popular'
+                  ? 'Guardá más recetas para recibir sugerencias personalizadas según tus gustos.'
+                  : 'Calculado con filtro colaborativo sobre los favoritos de toda la comunidad.'}
               </p>
 
               <div style={{
@@ -114,7 +126,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
                 gap: 16,
               }}>
                 {recommendations.map(r => (
-                  <RecommendationCard key={r.receta} rec={r} onOpen={() => onOpenRecipe(r.receta)} onFav={() => toggleFav(r.receta)} />
+                  <RecommendationCard key={r.receta} rec={r} isFav={profile.recetasFavoritas.includes(r.receta)} onOpen={() => onOpenRecipe(r.receta)} onFav={() => toggleFav(r.receta)} />
                 ))}
               </div>
             </div>
@@ -152,7 +164,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
             <EmptyState
               icon="bookmark"
               title="Sin favoritos aún"
-              action={<Button variant="primary" onClick={() => location.hash = '#browse'}>Explorar recetas</Button>}
+              action={<Button variant="primary" onClick={onExploreRecipes}>Explorar recetas</Button>}
             >
               Cuando guardes una receta, va a aparecer acá lista para volver a ella.
             </EmptyState>
@@ -232,61 +244,76 @@ const ProfileTab = ({ active, count, onClick, children }) => (
   </button>
 );
 
-const RecommendationCard = ({ rec, onOpen, onFav }) => (
-  <button
-    onClick={onOpen}
-    style={{
-      textAlign: 'left',
-      background: 'var(--paper)',
-      border: '1px solid var(--rule)',
-      borderRadius: 'var(--radius)',
-      padding: 16,
-      color: 'var(--ink)',
-      transition: 'background-color .2s, transform .2s',
-      display: 'flex', flexDirection: 'column', gap: 12,
-    }}
-    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.transform = ''; }}
-  >
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        fontSize: 11,
-        padding: '4px 10px',
-        borderRadius: 999,
-        background: 'var(--accent)',
-        color: 'var(--paper)',
-        fontWeight: 500,
-      }}>
-        <Icon name="sparkle" size={10} stroke={2}/>
-        {rec.nivelDeMatch} {rec.nivelDeMatch === 1 ? 'match' : 'matches'}
-      </span>
-      <button
-        onClick={(e) => { e.stopPropagation(); onFav(); }}
-        aria-label="Guardar"
-        style={{
-          width: 28, height: 28, borderRadius: 999,
-          color: 'var(--ink-3)',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <Icon name="bookmark" size={14}/>
-      </button>
+const RecommendationCard = ({ rec, isFav, onOpen, onFav }) => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen?.();
+    }
+  };
+
+  return (
+    <div
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      style={{
+        textAlign: 'left',
+        background: 'var(--paper)',
+        border: '1px solid var(--rule)',
+        borderRadius: 'var(--radius)',
+        padding: 16,
+        color: 'var(--ink)',
+        transition: 'background-color .2s, transform .2s',
+        display: 'flex', flexDirection: 'column', gap: 12,
+        height: '100%',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.transform = ''; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 11,
+          padding: '4px 10px',
+          borderRadius: 999,
+          background: 'var(--accent)',
+          color: 'var(--paper)',
+          fontWeight: 500,
+        }}>
+          <Icon name="sparkle" size={10} stroke={2}/>
+          {rec.nivelDeMatch} {rec.nivelDeMatch === 1 ? 'match' : 'matches'}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onFav(); }}
+          aria-label={isFav ? 'Quitar de favoritos' : 'Guardar'}
+          style={{
+            width: 28, height: 28, borderRadius: 999,
+            color: isFav ? 'var(--accent)' : 'var(--ink-3)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color .15s',
+          }}
+        >
+          <Icon name={isFav ? 'bookmarkFilled' : 'bookmark'} size={14}/>
+        </button>
+      </div>
+      <div className="font-display" style={{ fontSize: 24, lineHeight: 1.15, color: 'var(--ink)', letterSpacing: '-0.015em', textWrap: 'balance' }}>
+        {rec.receta}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--ink-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {rec.descripcion}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 'auto', fontSize: 12, color: 'var(--ink-3)' }}>
+        <span>{rec.tiempo}</span>
+        <span>·</span>
+        <span>{rec.dificultad}</span>
+        <span>·</span>
+        <span>{rec.categoria}</span>
+      </div>
     </div>
-    <div className="font-display" style={{ fontSize: 24, lineHeight: 1.15, color: 'var(--ink)', letterSpacing: '-0.015em', textWrap: 'balance' }}>
-      {rec.receta}
-    </div>
-    <div style={{ fontSize: 13, color: 'var(--ink-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-      {rec.descripcion}
-    </div>
-    <div style={{ display: 'flex', gap: 12, marginTop: 'auto', fontSize: 12, color: 'var(--ink-3)' }}>
-      <span>{rec.tiempo}</span>
-      <span>·</span>
-      <span>{rec.dificultad}</span>
-      <span>·</span>
-      <span>{rec.categoria}</span>
-    </div>
-  </button>
-);
+  );
+};
 
 Object.assign(window, { ProfileScreen });
