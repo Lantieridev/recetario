@@ -110,6 +110,61 @@ async function runTests() {
             console.log('Status:', res8.status);
             console.log('Respuesta:', JSON.stringify(res8.data));
 
+            // 9. Endpoint: Recetas Similares (GET /api/recetas/:titulo/similares)
+            console.log('\n9. Probando: Recetas Similares...');
+            const res9 = await request('/api/recetas/Pizza margherita/similares');
+            console.log('Status:', res9.status);
+            console.log('Respuesta:', JSON.stringify(res9.data));
+
+            // 10. Endpoint: Receta del Dia (GET /api/recetas/del-dia)
+            console.log('\n10. Probando: Receta del Dia...');
+            const res10 = await request('/api/recetas/del-dia');
+            console.log('Status:', res10.status);
+            console.log('Respuesta:', JSON.stringify(res10.data));
+
+            // 11. Endpoint: Tendencias (GET /api/recetas/tendencias)
+            console.log('\n11. Probando: Tendencias...');
+            const res11 = await request('/api/recetas/tendencias');
+            console.log('Status:', res11.status);
+            console.log('Respuesta:', JSON.stringify(res11.data));
+
+            // 12. Endpoint: Dashboard Stats (GET /api/dashboard/stats)
+            console.log('\n12. Probando: Dashboard Stats...');
+            const res12 = await request('/api/dashboard/stats');
+            console.log('Status:', res12.status);
+            console.log('Respuesta:', JSON.stringify(res12.data));
+
+            // 13. Endpoint: Top Creadores (GET /api/dashboard/top-creadores)
+            console.log('\n13. Probando: Top Creadores...');
+            const res13 = await request('/api/dashboard/top-creadores');
+            console.log('Status:', res13.status);
+            console.log('Respuesta:', JSON.stringify(res13.data));
+
+            // 14. Endpoint: Seguir Usuario (POST /api/usuarios/:nombre/seguir)
+            console.log('\n14. Probando: Seguir Usuario y Comunidad...');
+            const res14 = await request('/api/usuarios/Carlos/seguir', {
+                method: 'POST',
+                body: JSON.stringify({ usuarioASeguir: 'Ornella' }) // Assume Ornella is seeded
+            });
+            console.log('Status:', res14.status);
+            console.log('Respuesta Seguir:', JSON.stringify(res14.data));
+
+            // 15. Endpoint: Comunidad (GET /api/usuarios/:nombre/comunidad)
+            console.log('\n15. Probando: Comunidad...');
+            const res15 = await request('/api/usuarios/Carlos/comunidad');
+            console.log('Status:', res15.status);
+            console.log('Respuesta Comunidad:', JSON.stringify(res15.data));
+
+            // 16. Endpoint: Historial / Cook Mode (POST /api/usuarios/:nombre/historial)
+            console.log('\n16. Probando: Historial...');
+            const res16 = await request('/api/usuarios/Carlos/historial', {
+                method: 'POST',
+                body: JSON.stringify({ tituloReceta: 'Pizza margherita' })
+            });
+            console.log('Status:', res16.status);
+            console.log('Respuesta Historial:', JSON.stringify(res16.data));
+
+
             console.log('\n--- PRUEBAS FINALIZADAS ---');
         } catch (error) {
             console.error('❌ Error durante la ejecución de las pruebas:', error);

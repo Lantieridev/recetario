@@ -18,11 +18,16 @@ const ACCENT_OPTIONS = [
 //  NAV
 // ─────────────────────────────────────────────────────────────
 const TopNav = ({ user, route, onRoute, onLogout }) => {
+  const isEmpresa = user && (user.nombre.toLowerCase().includes('empresa') || user.nombre.toLowerCase() === 'bima');
   const items = [
     { id: 'browse', label: 'Recetas', icon: 'book' },
     { id: 'search', label: 'Buscar', icon: 'search' },
+    { id: 'comunidad', label: 'Comunidad', icon: 'chef' },
     { id: 'profile', label: 'Mi cocina', icon: 'user' },
   ];
+  if (isEmpresa) {
+    items.push({ id: 'dashboard', label: 'Dashboard', icon: 'sliders' });
+  }
 
   return (
     <header style={{
@@ -176,6 +181,19 @@ const App = () => {
   const [route, setRoute] = useState({ name: 'browse' });
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
+  // View transitions navigation
+  const navigate = useCallback((newRoute) => {
+    if (!document.startViewTransition) {
+      setRoute(newRoute);
+      return;
+    }
+    document.startViewTransition(() => {
+      ReactDOM.flushSync(() => {
+        setRoute(newRoute);
+      });
+    });
+  }, []);
+
   // Persist auth
   useEffect(() => {
     if (user) localStorage.setItem(LS_AUTH, JSON.stringify(user));
@@ -200,7 +218,7 @@ const App = () => {
 
   const handleLogout = () => {
     setUser(null);
-    setRoute({ name: 'browse' });
+    navigate({ name: 'browse' });
   };
 
   if (!user) {
@@ -235,8 +253,8 @@ const App = () => {
           titulo={route.titulo}
           user={user}
           initialData={route.initialData}
-          onBack={() => setRoute({ name: route.from || 'browse' })}
-          onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: route.from || 'browse' })}
+          onBack={() => navigate({ name: route.from || 'browse' })}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: route.from || 'browse' })}
         />
       );
       break;
@@ -244,7 +262,7 @@ const App = () => {
       screen = (
         <SearchScreen
           user={user}
-          onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: 'search' })}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'search' })}
         />
       );
       break;
@@ -252,9 +270,25 @@ const App = () => {
       screen = (
         <ProfileScreen
           user={user}
-          onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: 'profile' })}
-          onCreateRecipe={() => setRoute({ name: 'create' })}
-          onExploreRecipes={() => setRoute({ name: 'browse' })}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'profile' })}
+          onCreateRecipe={() => navigate({ name: 'create' })}
+          onExploreRecipes={() => navigate({ name: 'browse' })}
+        />
+      );
+      break;
+    case 'comunidad':
+      screen = (
+        <ComunidadScreen
+          user={user}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'comunidad' })}
+        />
+      );
+      break;
+    case 'dashboard':
+      screen = (
+        <DashboardScreen
+          user={user}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'dashboard' })}
         />
       );
       break;
@@ -262,8 +296,8 @@ const App = () => {
       screen = (
         <CreateRecipeScreen
           user={user}
-          onBack={() => setRoute({ name: 'browse' })}
-          onCreated={(t, initialData) => setRoute({ name: 'detail', titulo: t, from: 'browse', initialData })}
+          onBack={() => navigate({ name: 'browse' })}
+          onCreated={(t, initialData) => navigate({ name: 'detail', titulo: t, from: 'browse', initialData })}
         />
       );
       break;
@@ -271,15 +305,15 @@ const App = () => {
       screen = (
         <BrowseScreen
           user={user}
-          onOpenRecipe={(t) => setRoute({ name: 'detail', titulo: t, from: 'browse' })}
-          onCreateRecipe={() => setRoute({ name: 'create' })}
+          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'browse' })}
+          onCreateRecipe={() => navigate({ name: 'create' })}
         />
       );
   }
 
   return (
     <ToastProvider>
-      <TopNav user={user} route={route} onRoute={setRoute} onLogout={handleLogout} />
+      <TopNav user={user} route={route} onRoute={navigate} onLogout={handleLogout} />
       <main>{screen}</main>
 
       <footer style={{

@@ -6,7 +6,10 @@ import {
     buscarRecetas,
     obtenerReceta,
     obtenerCategorias,
-    obtenerIngredientes
+    obtenerIngredientes,
+    obtenerRecetasSimilares,
+    obtenerRecetaDelDia,
+    obtenerTendencias
 } from '../controllers/recetasController.js';
 
 const router = express.Router();
@@ -14,9 +17,12 @@ const router = express.Router();
 router.get('/categorias', obtenerCategorias);
 router.get('/ingredientes', obtenerIngredientes);
 router.get('/buscar', buscarRecetas);
+router.get('/tendencias', obtenerTendencias);
+router.get('/del-dia', obtenerRecetaDelDia);
 router.post('/', crearReceta);
-router.post('/:titulo/ingredientes', agregarIngrediente);
 router.get('/', listarRecetas);
+router.post('/:titulo/ingredientes', agregarIngrediente);
+router.get('/:titulo/similares', obtenerRecetasSimilares);
 router.get('/:titulo', obtenerReceta);
 
 export default router;

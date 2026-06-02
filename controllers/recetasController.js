@@ -4,9 +4,9 @@ import { formatDuration } from '../utils/timeFormatter.js';
 
 // 1. Crear Receta (relacionada con su creador y categoría)
 // POST /api/recetas
-// Body: { titulo, descripcion, dificultad, tiempo, pasos, creador, categoria }
+// Body: { titulo, descripcion, dificultad, tiempo, pasos, creador, categoria, imagen }
 export const crearReceta = async (req, res) => {
-    const { titulo, descripcion, dificultad, tiempo, porciones, pasos, creador, categoria } = req.body;
+    const { titulo, descripcion, dificultad, tiempo, porciones, pasos, creador, categoria, imagen } = req.body;
 
     if (!titulo || !descripcion || !dificultad || !tiempo || !pasos || !creador || !categoria) {
         return res.status(400).json({ 
@@ -38,10 +38,11 @@ export const crearReceta = async (req, res) => {
                 r.dificultad = $dificultad,
                 r.tiempo = $tiempo,
                 r.porciones = $porciones,
-                r.pasos = $pasos
+                r.pasos = $pasos,
+                r.imagen = $imagen
             MERGE (u)-[:CREO]->(r)
             MERGE (r)-[:PERTENECE_A]->(c)
-            RETURN r.titulo AS titulo, u.nombre AS creador, c.nombre AS categoria
+            RETURN r.titulo AS titulo, u.nombre AS creador, c.nombre AS categoria, r.imagen AS imagen
         `;
 
         const result = await session.run(query, {
@@ -52,7 +53,8 @@ export const crearReceta = async (req, res) => {
             porciones: parseInt(porciones) || 4,
             pasos,
             creador,
-            categoria
+            categoria,
+            imagen: imagen || null
         });
 
         const record = result.records[0];
@@ -62,7 +64,8 @@ export const crearReceta = async (req, res) => {
             receta: {
                 titulo: record.get('titulo'),
                 creador: record.get('creador'),
-                categoria: record.get('categoria')
+                categoria: record.get('categoria'),
+                imagen: record.get('imagen')
             }
         });
     } catch (error) {
@@ -136,7 +139,7 @@ export const listarRecetas = async (req, res) => {
               AND ($tiempo IS NULL OR r.tiempo = $tiempo)
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
-            RETURN DISTINCT r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, c.nombre AS categoria, u.nombre AS creador
+            RETURN DISTINCT r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
         `;
 
         const result = await session.run(query, {
@@ -150,6 +153,7 @@ export const listarRecetas = async (req, res) => {
             descripcion: record.get('descripcion'),
             dificultad: record.get('dificultad'),
             tiempo: formatDuration(record.get('tiempo')),
+            imagen: record.get('imagen'),
             categoria: record.get('categoria'),
             creador: record.get('creador')
         }));
@@ -261,6 +265,7 @@ export const obtenerReceta = async (req, res) => {
                    r.tiempo AS tiempo,
                    r.porciones AS porciones,
                    r.pasos AS pasos,
+                   r.imagen AS imagen,
                    c.nombre AS categoria,
                    u.nombre AS creador,
                    collect(DISTINCT { nombre: i.nombre, cantidad: co.cantidad }) AS ingredientes
@@ -282,6 +287,7 @@ export const obtenerReceta = async (req, res) => {
                 tiempo: formatDuration(record.get('tiempo')),
                 porciones: record.get('porciones') ? (neo4j.isInt(record.get('porciones')) ? record.get('porciones').toNumber() : record.get('porciones')) : 4,
                 pasos: record.get('pasos'),
+                imagen: record.get('imagen'),
                 categoria: record.get('categoria'),
                 creador: record.get('creador'),
                 ingredientes
@@ -325,3 +331,115 @@ export const obtenerIngredientes = async (req, res) => {
     }
 };
 
+// 8. Recetas Similares
+// GET /api/recetas/:titulo/similares
+export const obtenerRecetasSimilares = async (req, res) => {
+    const { titulo } = req.params;
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (r1:Receta {titulo: $titulo})-[:CONTIENE]->(i:Ingrediente)<-[:CONTIENE]-(r2:Receta)
+            OPTIONAL MATCH (r2)-[:PERTENECE_A]->(c:Categoria)
+            RETURN r2.titulo AS receta, r2.dificultad AS dificultad, r2.tiempo AS tiempo, r2.imagen AS imagen, c.nombre AS categoria, count(i) AS ingredientes_comunes
+            ORDER BY ingredientes_comunes DESC LIMIT 5
+        `;
+        const result = await session.run(query, { titulo });
+        const similares = result.records.map(r => {
+            const count = r.get('ingredientes_comunes');
+            return {
+                titulo: r.get('receta'),
+                dificultad: r.get('dificultad'),
+                tiempo: r.get('tiempo'),
+                imagen: r.get('imagen'),
+                categoria: r.get('categoria'),
+                ingredientesComunes: neo4j.isInt(count) ? count.toNumber() : Number(count)
+            };
+        });
+        res.status(200).json({ similares });
+    } catch (error) {
+        console.error('Error al obtener recetas similares:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 9. Receta del Día
+// GET /api/recetas/del-dia
+export const obtenerRecetaDelDia = async (req, res) => {
+    const session = getSession();
+    try {
+        // Obtenemos el día del año
+        const start = new Date(new Date().getFullYear(), 0, 0);
+        const diff = new Date() - start + (start.getTimezoneOffset() - new Date().getTimezoneOffset()) * 60 * 1000;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        
+        // Usamos el dayOfYear para saltar y elegir de forma "pseudo-aleatoria" pero determinística por día
+        const query = `
+            MATCH (r:Receta)
+            WITH r ORDER BY r.titulo
+            WITH collect(r) AS recetas
+            WITH recetas, size(recetas) AS total
+            WITH recetas[toInteger($dayOfYear % total)] AS delDia
+            OPTIONAL MATCH (delDia)-[:PERTENECE_A]->(c:Categoria)
+            OPTIONAL MATCH (u:Usuario)-[:CREO]->(delDia)
+            RETURN delDia.titulo AS titulo, delDia.descripcion AS descripcion, delDia.dificultad AS dificultad, 
+                   delDia.tiempo AS tiempo, delDia.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
+        `;
+        const result = await session.run(query, { dayOfYear });
+        if (result.records.length === 0 || result.records[0].get('titulo') === null) {
+            return res.status(404).json({ error: 'No hay recetas disponibles para receta del día' });
+        }
+        const record = result.records[0];
+        res.status(200).json({
+            receta: {
+                titulo: record.get('titulo'),
+                descripcion: record.get('descripcion'),
+                dificultad: record.get('dificultad'),
+                tiempo: record.get('tiempo'),
+                imagen: record.get('imagen'),
+                categoria: record.get('categoria'),
+                creador: record.get('creador')
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener receta del dia:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 10. Tendencias
+// GET /api/recetas/tendencias
+export const obtenerTendencias = async (req, res) => {
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (r:Receta)<-[:GUARDO_FAV]-(u:Usuario)
+            OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
+            RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, count(u) AS popularidad
+            ORDER BY popularidad DESC LIMIT 6
+        `;
+        const result = await session.run(query);
+        const tendencias = result.records.map(record => {
+            const pop = record.get('popularidad');
+            return {
+                titulo: record.get('titulo'),
+                descripcion: record.get('descripcion'),
+                dificultad: record.get('dificultad'),
+                tiempo: record.get('tiempo'),
+                imagen: record.get('imagen'),
+                categoria: record.get('categoria'),
+                popularidad: neo4j.isInt(pop) ? pop.toNumber() : Number(pop)
+            };
+        });
+        res.status(200).json({ tendencias });
+    } catch (error) {
+        console.error('Error al obtener tendencias:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};

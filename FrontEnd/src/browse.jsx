@@ -29,7 +29,7 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
         }}
       >
         <div style={{ width: 180, height: 110 }}>
-          <RecipeCover titulo={receta.titulo} categoria={receta.categoria} height={110} compact />
+          <CleanRecipeImage titulo={receta.titulo} categoria={receta.categoria} imagenUrl={receta.imagen} height={110} compact />
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'center' }}>
@@ -78,7 +78,7 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
       }}
     >
       <div style={{ position: 'relative', padding: 12 }}>
-        <RecipeCover titulo={receta.titulo} categoria={receta.categoria} height={200} />
+        <CleanRecipeImage titulo={receta.titulo} categoria={receta.categoria} imagenUrl={receta.imagen} height={200} />
         {onFav && (
           <button
             onClick={(e) => { e.stopPropagation(); onFav(); }}
@@ -131,6 +131,60 @@ const RecipeCard = ({ receta, onOpen, isFav, onFav, layout = 'grid' }) => {
   );
 };
 
+const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user }) => {
+  if (!receta) return null;
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 64px)', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} onClick={onOpen}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <CleanRecipeImage titulo={receta.titulo} categoria={receta.categoria} imagenUrl={receta.imagen} height="100%" />
+      </div>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(28,24,20,0.4) 0%, transparent 40%, rgba(28,24,20,0.9) 100%)', zIndex: 1 }} />
+      
+      {/* Top Welcome Text overlaid on hero */}
+      <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: 56, color: 'var(--paper)' }}>
+        <div className="eyebrow" style={{ marginBottom: 14, color: 'rgba(255,255,255,0.8)' }}>
+          Hola {user.nombre}
+        </div>
+        <h1 className="font-display" style={{
+          fontSize: 'clamp(44px, 5.5vw, 68px)',
+          margin: '0 0 16px',
+          lineHeight: 1.0,
+          letterSpacing: '-0.025em',
+          textWrap: 'balance',
+          color: 'var(--paper)'
+        }}>
+          ¿Qué cocinás <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>hoy</em>?
+        </h1>
+      </div>
+
+      {/* Bottom Hero Info */}
+      <div className="container" style={{ position: 'relative', zIndex: 2, paddingBottom: 48 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24 }}>
+          <div style={{ color: 'var(--paper)', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <span style={{ padding: '6px 14px', background: 'var(--accent)', color: 'var(--paper)', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', borderRadius: 999 }}>
+                Receta del día
+              </span>
+              <span style={{ opacity: 0.9, fontSize: 14 }}>por {receta.creador}</span>
+            </div>
+            <h2 className="font-display" style={{ fontSize: 'clamp(40px, 6vw, 64px)', margin: '0 0 12px', lineHeight: 1.05, letterSpacing: '-0.015em', textWrap: 'balance' }}>
+              {receta.titulo}
+            </h2>
+            <p style={{ fontSize: 18, opacity: 0.85, margin: 0, maxWidth: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {receta.descripcion}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button onClick={(e) => { e.stopPropagation(); onFav(); }} className="btn btn-icon focus-ring" style={{ width: 56, height: 56, borderRadius: 28, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', color: 'var(--paper)', border: 'none' }}>
+              <Icon name={isFav ? 'bookmarkFilled' : 'bookmark'} size={24} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────
 
 const TIME_RANGES = [
@@ -168,9 +222,18 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
   const [query, setQuery] = useState('');
   const [layout, setLayout] = useState('grid');
   const [data, setData] = useState({ recetas: [], total: 0 });
+  const [recetaDelDia, setRecetaDelDia] = useState(null);
   const [loading, setLoading] = useState(true);
   const [favs, setFavs] = useState(new Set());
   const toast = useToast();
+
+  useEffect(() => {
+    let alive = true;
+    window.api.recetaDelDia().then(res => {
+      if (alive) setRecetaDelDia(res.receta);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -231,37 +294,50 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
 
   const cats = window.api.categorias();
   const hasActiveFilters = Object.values(filters).some(Boolean) || sortBy !== '';
+  const activeFilters = Object.values(filters).filter(Boolean).length;
+  
+  // Asumimos que la receta del día es la que viene del backend
+  const isDefaultView = !query && activeFilters === 0;
 
   return (
     <div data-screen-label="Browse" className="fade-in">
-      {/* Hero */}
-      <section style={{ padding: '56px 0 36px' }}>
-        <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 32, flexWrap: 'wrap' }}>
-            <div style={{ maxWidth: 720 }}>
-              <div className="eyebrow" style={{ marginBottom: 14 }}>
-                Hola {user.nombre} · {data.total} recetas en tu cocina
+      {/* Header Info */}
+      {!isDefaultView || !recetaDelDia ? (
+        <section style={{ padding: '56px 0 36px' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 32, flexWrap: 'wrap' }}>
+              <div style={{ maxWidth: 720 }}>
+                <div className="eyebrow" style={{ marginBottom: 14 }}>
+                  Hola {user.nombre} · {data.total} recetas en tu cocina
+                </div>
+                <h1 className="font-display" style={{
+                  fontSize: 'clamp(44px, 5.5vw, 68px)',
+                  margin: '0 0 16px',
+                  lineHeight: 1.0,
+                  letterSpacing: '-0.025em',
+                  textWrap: 'balance',
+                }}>
+                  Explorando <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>recetas</em>
+                </h1>
               </div>
-              <h1 className="font-display" style={{
-                fontSize: 'clamp(44px, 5.5vw, 68px)',
-                margin: '0 0 16px',
-                lineHeight: 1.0,
-                letterSpacing: '-0.025em',
-                textWrap: 'balance',
-              }}>
-                ¿Qué cocinás <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>hoy</em>?
-              </h1>
-              <p className="text-muted" style={{ fontSize: 17, margin: 0, maxWidth: 540 }}>
-                Explorá la colección completa o filtrá por categoría, tiempo y dificultad.
-              </p>
-            </div>
 
-            <Button variant="primary" icon="plus" onClick={onCreateRecipe}>
-              Nueva receta
-            </Button>
+              <Button variant="primary" icon="plus" onClick={onCreateRecipe}>
+                Nueva receta
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section style={{ marginBottom: 0 }}>
+          <RecetaDelDiaHero 
+            receta={recetaDelDia} 
+            onOpen={() => onOpenRecipe(recetaDelDia.titulo)} 
+            isFav={favs.has(recetaDelDia.titulo)} 
+            onFav={() => toggleFav(recetaDelDia.titulo)} 
+            user={user}
+          />
+        </section>
+      )}
 
       {/* Search + filters */}
       <section style={{ position: 'sticky', top: 64, zIndex: 5, background: 'var(--cream)', borderBottom: '1px solid var(--rule)' }}>

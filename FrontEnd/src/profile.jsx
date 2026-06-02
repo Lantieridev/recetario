@@ -42,7 +42,21 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
   };
 
   if (loading || !profile) {
-    return <div className="container" style={{ padding: '80px 32px' }}><div className="skeleton" style={{ height: 400 }}/></div>;
+    return (
+      <div className="container fade-in" style={{ padding: '80px 32px' }}>
+        <div style={{ display: 'flex', gap: 32, alignItems: 'center', marginBottom: 64 }}>
+          <div className="skeleton" style={{ width: 96, height: 96, borderRadius: '50%' }} />
+          <div style={{ flex: 1 }}>
+            <div className="skeleton" style={{ width: 120, height: 20, marginBottom: 16 }} />
+            <div className="skeleton" style={{ width: 300, height: 48, marginBottom: 12 }} />
+            <div className="skeleton" style={{ width: 200, height: 16 }} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+          {[0, 1, 2].map(i => <SkeletonCard key={i} />)}
+        </div>
+      </div>
+    );
   }
 
   const favRecs = profile.recetasFavoritas.map(t => recetasMap[t]).filter(Boolean);
@@ -148,12 +162,15 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
 
       {/* Tabs */}
       <section className="container" style={{ padding: '0 32px' }}>
-        <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--rule)', marginBottom: 28 }}>
+        <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--rule)', marginBottom: 28, overflowX: 'auto', scrollbarWidth: 'none' }}>
           <ProfileTab active={tab === 'favoritos'} onClick={() => setTab('favoritos')} count={favRecs.length}>
             Favoritas
           </ProfileTab>
           <ProfileTab active={tab === 'creadas'} onClick={() => setTab('creadas')} count={myRecs.length}>
             Creadas por mí
+          </ProfileTab>
+          <ProfileTab active={tab === 'terminadas'} onClick={() => setTab('terminadas')} count={0}>
+            Terminadas
           </ProfileTab>
         </div>
       </section>
@@ -181,7 +198,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
               ))}
             </div>
           )
-        ) : (
+        ) : tab === 'creadas' ? (
           myRecs.length === 0 ? (
             <EmptyState
               icon="chef"
@@ -203,6 +220,14 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
               ))}
             </div>
           )
+        ) : (
+          <EmptyState
+            icon="check"
+            title="Aún no completaste ninguna receta"
+            action={<Button variant="primary" onClick={() => location.hash = '#browse'}>Encontrar algo para cocinar</Button>}
+          >
+            Usá el Modo Cocina para preparar recetas y van a aparecer acá como completadas.
+          </EmptyState>
         )}
       </section>
     </div>

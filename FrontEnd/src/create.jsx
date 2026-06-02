@@ -1,21 +1,68 @@
 /* eslint-disable */
-// Create Recipe — 2 steps: básicos → ingredientes → done
+// Create Recipe — Fase 2A Redesign
 // Endpoints: POST /api/recetas + POST /api/recetas/:titulo/ingredientes
 
+const StepEditor = ({ steps, onChange }) => {
+  const addStep = () => onChange([...steps, { texto: '', timer: { hs: '', min: '' } }]);
+  const updateStep = (idx, field, val) => {
+    const next = [...steps];
+    next[idx][field] = val;
+    onChange(next);
+  };
+  const removeStep = (idx) => onChange(steps.filter((_, i) => i !== idx));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {steps.map((step, i) => (
+        <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div className="font-display" style={{ fontSize: 32, color: 'var(--ink-3)', lineHeight: 1, paddingTop: 4, width: 40, flexShrink: 0 }}>
+            {i + 1}.
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <textarea
+              className="textarea"
+              placeholder="Ej: Mezclar los ingredientes secos..."
+              value={step.texto}
+              onChange={(e) => updateStep(i, 'texto', e.target.value)}
+              rows={2}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-2)', textTransform: 'uppercase' }}>Duración (opcional)</span>
+                <div style={{ width: 140 }}>
+                  <HoursMinutesInput value={step.timer} onChange={(v) => updateStep(i, 'timer', v)} />
+                </div>
+              </div>
+              <button onClick={() => removeStep(i)} className="btn-link" style={{ color: 'var(--ink-3)', fontSize: 13 }}>
+                Quitar paso
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+      <Button variant="ghost" onClick={addStep} style={{ alignSelf: 'flex-start' }}>
+        + Agregar otro paso
+      </Button>
+    </div>
+  );
+};
+
 const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
-  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     titulo: '',
     descripcion: '',
     categoria: '',
     dificultad: 'Media',
-    tiempoVal: '30',
-    tiempoUnidad: 'minutos',
-    porciones: '4',
-    pasos: [''],
+
+    tiempo: { hs: '', min: '' },
+    metodoCoccion: 'Horno',
+    imagenUrl: '',
+    ingredientes: [],
+    pasos: [{ texto: '', timer: { hs: '', min: '' } }]
   });
-  const [ingredients, setIngredients] = useState([]);
-  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos' });
+  
+  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidad: '', esOpcional: false });
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [suggested, setSuggested] = useState([]);
@@ -25,91 +72,73 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
   const cats = window.api.categorias();
 
-  const canStep1 = form.titulo && form.descripcion && form.categoria && form.pasos.some(p => p.trim() !== '');
-  const canSubmit = canStep1 && ingredients.length > 0;
+
 
   const addIngredient = () => {
     if (!ingDraft.nombre) {
       toast('Completá el nombre del ingrediente');
       return;
     }
-    const noRequiereValor = ingDraft.cantidadUnidad === 'a gusto';
-    if (!noRequiereValor) {
-      if (!ingDraft.cantidadVal) {
-        toast('Completá la cantidad');
-        return;
-      }
-      const val = parseFloat(ingDraft.cantidadVal);
-      if (isNaN(val) || val <= 0) {
-        toast('La cantidad debe ser mayor a 0');
-        return;
-      }
-    }
-    const finalCantidad = noRequiereValor ? ingDraft.cantidadUnidad : `${ingDraft.cantidadVal} ${ingDraft.cantidadUnidad}`;
-    if (ingredients.some(i => i.nombre.toLowerCase() === ingDraft.nombre.toLowerCase())) {
+
+    if (form.ingredientes.some(i => i.nombre.toLowerCase() === ingDraft.nombre.toLowerCase())) {
       toast('Ya está en la lista');
       return;
     }
-    setIngredients([...ingredients, { nombre: ingDraft.nombre, cantidad: finalCantidad }]);
-    setIngDraft({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos' });
+    setForm({ ...form, ingredientes: [...form.ingredientes, { ...ingDraft }] });
+    setIngDraft({ nombre: '', cantidad: '', esOpcional: false });
+  };
+
+  const removeIngredient = (idx) => {
+    setForm({ ...form, ingredientes: form.ingredientes.filter((_, i) => i !== idx) });
+
   };
 
   const submit = async () => {
     setSaving(true);
     setError(null);
     try {
-      const cleanStepText = (text) => {
-        return text
-          .replace(/\r\n/g, '\n')
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line !== '')
-          .join('\n')
-          .trim();
-      };
-      // Convierte minutos a formato legible: si pasan de 60, usa horas
-      const formatTiempo = (val, unidad) => {
-        const n = parseInt(val) || 0;
-        const totalMins = unidad === 'horas' ? n * 60 : n;
-        if (totalMins < 60) return `${totalMins} min`;
-        const h = Math.floor(totalMins / 60);
-        const m = totalMins % 60;
-        if (m === 0) return `${h}h`;
-        return `${h}h ${m}min`;
-      };
+
+      // Formatear el tiempo total
+      let tiempoStr = '';
+      if (form.tiempo.hs) tiempoStr += `${form.tiempo.hs}h `;
+      if (form.tiempo.min) tiempoStr += `${form.tiempo.min}min`;
+      tiempoStr = tiempoStr.trim() || '30 min';
+
+      // Formatear pasos
+      const pasosStr = form.pasos
+        .filter(p => p.texto.trim())
+        .map((p, i) => `${i + 1}. ${p.texto}${p.timer.hs || p.timer.min ? ` [⏱ ${p.timer.hs ? p.timer.hs + 'h ' : ''}${p.timer.min ? p.timer.min + 'min' : ''}]` : ''}`)
+        .join('\n');
+
 
       const payload = {
         titulo: form.titulo,
         descripcion: form.descripcion,
         categoria: form.categoria,
         dificultad: form.dificultad,
-        tiempo: formatTiempo(form.tiempoVal, form.tiempoUnidad),
-        porciones: parseInt(form.porciones) || 4,
-        pasos: form.pasos.map(cleanStepText).filter(p => p !== '').map((p, i) => `${i + 1}. ${p}`).join(' '),
-        creador: user.nombre
+
+        tiempo: tiempoStr,
+        creador: user.nombre,
+        pasos: pasosStr,
+        imagen: form.imagenUrl || null
       };
+
       await window.api.crearReceta(payload);
-      // Asociar ingredientes uno por uno (replica el endpoint real)
-      for (const ing of ingredients) {
+      
+      // Asociar ingredientes
+      for (const ing of form.ingredientes) {
+
         await window.api.agregarIngrediente(form.titulo, {
           nombreIngrediente: ing.nombre,
           cantidad: ing.cantidad,
+          // Idealmente la API soportaría esOpcional, pero al menos lo guardamos en nuestro form
         });
       }
+      
       toast('¡Receta publicada!');
-      setStep(3);
-      const initialData = {
-        titulo: payload.titulo,
-        descripcion: payload.descripcion,
-        categoria: payload.categoria,
-        dificultad: payload.dificultad,
-        tiempo: payload.tiempo,
-        porciones: payload.porciones,
-        pasos: payload.pasos,
-        creador: payload.creador,
-        ingredientes: ingredients
-      };
-      setTimeout(() => onCreated(form.titulo, initialData), 1100);
+
+      setTimeout(() => onCreated(form.titulo), 1100);
+
     } catch (err) {
       setError(err.error || 'No pudimos guardar la receta');
     } finally {
@@ -117,63 +146,58 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     }
   };
 
+  const canSubmit = form.titulo && form.categoria && form.ingredientes.length > 0 && form.pasos[0].texto;
+
   return (
-    <div data-screen-label="Create Recipe" className="fade-in" style={{ background: 'var(--cream)', minHeight: '100vh' }}>
-      <div className="container" style={{ padding: '32px 32px 96px', maxWidth: 920 }}>
+    <div data-screen-label="Create Recipe" className="fade-in" style={{ background: 'var(--cream)', minHeight: '100vh', paddingBottom: 120 }}>
+      <div className="container" style={{ padding: '32px 32px 0', maxWidth: 760 }}>
         <button onClick={onBack} className="btn btn-ghost btn-sm focus-ring" style={{ marginBottom: 32 }}>
-          <Icon name="back" size={14} /> Cancelar
+          <Icon name="back" size={14} /> Volver
         </button>
 
-        {/* Stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
-          <Step n={1} active={step >= 1} done={step > 1} label="Básicos" />
-          <div style={{ flex: 1, height: 1, background: step >= 2 ? 'var(--ink)' : 'var(--rule)', maxWidth: 80 }}/>
-          <Step n={2} active={step >= 2} done={step > 2} label="Ingredientes" />
-          <div style={{ flex: 1, height: 1, background: step >= 3 ? 'var(--ink)' : 'var(--rule)', maxWidth: 80 }}/>
-          <Step n={3} active={step >= 3} done={step > 3} label="Publicado" />
-        </div>
+        <h1 className="font-display" style={{ fontSize: 'clamp(40px, 4.5vw, 56px)', margin: '0 0 48px', lineHeight: 1.05, letterSpacing: '-0.025em' }}>
+          Nueva receta
+        </h1>
 
-        {/* Step 1: basics */}
-        {step === 1 && (
-          <div className="fade-in">
-            <div className="eyebrow" style={{ marginBottom: 12 }}>Paso 1 de 2</div>
-            <h1 className="font-display" style={{ fontSize: 'clamp(40px, 4.5vw, 56px)', margin: '0 0 12px', lineHeight: 1.05, letterSpacing: '-0.025em' }}>
-              Contá tu receta
-            </h1>
-            <p className="text-muted" style={{ marginBottom: 40, fontSize: 16 }}>
-              Lo esencial primero. Después le sumamos los ingredientes.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 64 }}>
+          {/* Bloque Identidad */}
+          <section>
+            <div className="eyebrow" style={{ marginBottom: 24, fontSize: 12, color: 'var(--ink-3)' }}>1. Identidad</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div className="field">
-                <label className="field-label">Título</label>
                 <input
-                  className="input"
-                  style={{ height: 56, fontSize: 22, fontFamily: 'var(--font-display)' }}
-                  placeholder="Ñoquis de mi abuela"
+                  className="input focus-ring"
+                  style={{ height: 64, fontSize: 32, fontFamily: 'var(--font-display)', padding: '0 16px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, borderBottom: '2px solid var(--rule)' }}
+                  placeholder="Título de la receta"
                   value={form.titulo}
                   onChange={(e) => setForm({ ...form, titulo: e.target.value })}
                 />
               </div>
 
               <div className="field">
-                <label className="field-label">Descripción corta</label>
+                <label className="field-label">Descripción</label>
                 <textarea
                   className="textarea"
-                  placeholder="Una línea que enganche…"
+                  placeholder="Una línea que enganche..."
                   value={form.descripcion}
                   onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                   rows={2}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+
                 <div className="field">
-                  <label className="field-label">Categoría</label>
-                  <select className="select" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
-                    <option value="">Elegir…</option>
-                    {cats.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <CustomDropdown
+                    label="Categoría"
+                    variant="field"
+                    value={form.categoria}
+                    options={cats}
+                    onChange={(v) => setForm({ ...form, categoria: v })}
+                    placeholder="Elegir..."
+                    accent={CAT_COLORS[form.categoria]}
+                  />
                 </div>
                 <div className="field">
                   <label className="field-label">Dificultad</label>
@@ -183,7 +207,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         key={d}
                         type="button"
                         onClick={() => setForm({ ...form, dificultad: d })}
-                        className="btn"
+                        className="btn focus-ring"
                         style={{
                           flex: 1, height: 44, padding: 0, fontSize: 14,
                           background: form.dificultad === d ? 'var(--ink)' : 'var(--paper)',
@@ -196,130 +220,78 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                     ))}
                   </div>
                 </div>
-                <div className="field">
-                  <label className="field-label">Tiempo</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      type="number"
-                      min="1"
-                      className="input"
-                      placeholder="30"
-                      style={{ flex: 1 }}
-                      value={form.tiempoVal}
-                      onChange={(e) => setForm({ ...form, tiempoVal: e.target.value })}
-                    />
-                    <select
-                      className="select"
-                      style={{ width: 110 }}
-                      value={form.tiempoUnidad}
-                      onChange={(e) => setForm({ ...form, tiempoUnidad: e.target.value })}
-                    >
-                      <option value="minutos">minutos</option>
-                      <option value="horas">horas</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="field">
-                  <label className="field-label">Porciones</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className="input"
-                    placeholder="Ej: 4"
-                    value={form.porciones}
-                    onChange={(e) => setForm({ ...form, porciones: e.target.value })}
-                  />
-                </div>
-              </div>
 
+
+              </div>
+            </div>
+          </section>
+
+          <hr style={{ border: 0, borderTop: '1px solid var(--rule)' }} />
+
+          {/* Bloque Tiempo y cocción */}
+          <section>
+            <div className="eyebrow" style={{ marginBottom: 24, fontSize: 12, color: 'var(--ink-3)' }}>2. Tiempo y cocción</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 40, alignItems: 'start' }}>
               <div className="field">
-                <label className="field-label" style={{ marginBottom: 4 }}>Pasos</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {form.pasos.map((paso, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 1fr auto', gap: 16, alignItems: 'start' }}>
-                      <div className="font-display" style={{ fontSize: 32, lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--ink-3)', paddingTop: 6 }}>
-                        {String(i + 1).padStart(2, '0')}
-                      </div>
-                      <textarea
-                        className="textarea"
-                        style={{ minHeight: 60 }}
-                        placeholder="Ej: Mezclar los ingredientes secos en un bowl…"
-                        value={paso}
-                        onChange={(e) => {
-                          const n = [...form.pasos];
-                          n[i] = e.target.value;
-                          setForm({ ...form, pasos: n });
-                        }}
-                      />
-                      {form.pasos.length > 1 && (
-                        <button
-                          onClick={() => {
-                            const n = form.pasos.filter((_, idx) => idx !== i);
-                            setForm({ ...form, pasos: n });
-                          }}
-                          className="btn btn-icon btn-ghost btn-sm"
-                          aria-label="Quitar paso"
-                          style={{ marginTop: 8, color: 'var(--ink-3)' }}
-                        >
-                          <Icon name="trash" size={13} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => setForm({ ...form, pasos: [...form.pasos, ''] })}
-                    className="btn btn-ghost"
-                    style={{ alignSelf: 'flex-start', marginTop: 8 }}
-                  >
-                    + Agregar otro paso
-                  </button>
-                </div>
+
+                <label className="field-label">Tiempo total</label>
+                <HoursMinutesInput value={form.tiempo} onChange={(v) => setForm({ ...form, tiempo: v })} />
+              </div>
+              <div className="field">
+                <label className="field-label">Método principal</label>
+                <CookingMethodChips value={form.metodoCoccion} onChange={(v) => setForm({ ...form, metodoCoccion: v })} />
+
               </div>
             </div>
+          </section>
 
-            {/* Preview */}
-            {form.titulo && form.categoria && (
-              <div style={{ marginTop: 40 }}>
-                <div className="eyebrow" style={{ marginBottom: 12 }}>Vista previa</div>
-                <div style={{ maxWidth: 320 }}>
-                  <RecipeCover titulo={form.titulo} categoria={form.categoria} height={220} />
-                </div>
-              </div>
-            )}
+          <hr style={{ border: 0, borderTop: '1px solid var(--rule)' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--rule)' }}>
-              <div className="text-muted" style={{ fontSize: 13 }}>
-                {canStep1 ? '✓ Listo para el siguiente paso' : 'Completá todos los campos'}
+          {/* Bloque Imagen */}
+          <section>
+            <div className="eyebrow" style={{ marginBottom: 24, fontSize: 12, color: 'var(--ink-3)' }}>3. Imagen</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div 
+                style={{ 
+                  border: '2px dashed var(--rule)', borderRadius: 'var(--radius-lg)', padding: 40, 
+                  textAlign: 'center', background: 'var(--paper)', cursor: 'pointer', transition: 'border-color .2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--rule)'}
+              >
+                {form.imagenUrl ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                    <img src={form.imagenUrl} style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }} />
+                    <span style={{ fontSize: 15, color: 'var(--ink)' }}>Imagen seleccionada</span>
+                  </div>
+                ) : (
+                  <>
+                    <Icon name="sparkle" size={24} />
+                    <div style={{ marginTop: 12, fontSize: 16 }}>Sube una imagen (desactivado temporalmente)</div>
+                  </>
+                )}
               </div>
-              <Button variant="primary" iconRight="arrow" disabled={!canStep1} onClick={() => setStep(2)}>
-                Continuar
-              </Button>
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* Step 2: ingredients */}
-        {step === 2 && (
-          <div className="fade-in">
-            <div className="eyebrow" style={{ marginBottom: 12 }}>Paso 2 de 2</div>
-            <h1 className="font-display" style={{ fontSize: 'clamp(40px, 4.5vw, 56px)', margin: '0 0 12px', lineHeight: 1.05, letterSpacing: '-0.025em' }}>
-              ¿Qué lleva?
-            </h1>
-            <p className="text-muted" style={{ marginBottom: 32, fontSize: 16 }}>
-              Sumá los ingredientes especificando su cantidad y medida exacta.
-            </p>
 
+          <hr style={{ border: 0, borderTop: '1px solid var(--rule)' }} />
+
+
+          {/* Bloque Ingredientes */}
+          <section>
+            <div className="eyebrow" style={{ marginBottom: 24, fontSize: 12, color: 'var(--ink-3)' }}>4. Ingredientes</div>
             <div style={{
               background: 'var(--paper)', border: '1px solid var(--rule)',
               borderRadius: 'var(--radius-lg)', padding: 24, marginBottom: 24,
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 12, alignItems: 'end' }}>
-                <div className="field">
+              <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
+                <div className="field" style={{ flex: 1.5 }}>
                   <label className="field-label">Ingrediente</label>
                   <input
-                    className="input"
+                    className="input focus-ring"
                     list="ing-suggestions"
-                    placeholder="Harina"
+                    placeholder="Ej: Harina de trigo"
                     value={ingDraft.nombre}
                     onChange={(e) => setIngDraft({ ...ingDraft, nombre: e.target.value })}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
@@ -328,179 +300,90 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                     {suggested.map(s => <option key={s} value={s} />)}
                   </datalist>
                 </div>
-                <div className="field" style={{ minWidth: 200 }}>
+
+                <div className="field" style={{ flex: 1 }}>
                   <label className="field-label">Cantidad</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      className="input"
-                      placeholder="Ej: 200"
-                      style={{ flex: 1 }}
-                      disabled={ingDraft.cantidadUnidad === 'a gusto'}
-                      value={ingDraft.cantidadVal}
-                      onChange={(e) => setIngDraft({ ...ingDraft, cantidadVal: e.target.value })}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
-                    />
-                    <select
-                      className="select"
-                      style={{ width: 130 }}
-                      value={ingDraft.cantidadUnidad}
-                      onChange={(e) => setIngDraft({ ...ingDraft, cantidadUnidad: e.target.value })}
-                    >
-                      <option value="gramos">gramos</option>
-                      <option value="mililitros">mililitros</option>
-                      <option value="tazas">tazas</option>
-                      <option value="cucharadas">cucharadas</option>
-                      <option value="cucharaditas">cucharaditas</option>
-                      <option value="unidades">unidades</option>
-                      <option value="a gusto">a gusto</option>
-                    </select>
-                  </div>
+                  <input
+                    className="input focus-ring"
+                    placeholder="Ej: 500g"
+                    value={ingDraft.cantidad}
+                    onChange={(e) => setIngDraft({ ...ingDraft, cantidad: e.target.value })}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
+                  />
+
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 12px' }}>
+                  <label className="switch" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <div style={{
+                      width: 32, height: 18, borderRadius: 999, background: ingDraft.esOpcional ? 'var(--accent)' : 'var(--rule)',
+                      position: 'relative', transition: 'background .2s'
+                    }}>
+                      <div style={{
+                        width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: 2, left: ingDraft.esOpcional ? 16 : 2, transition: 'left .2s'
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Opcional</span>
+                  </label>
+                  <input
+                    type="checkbox"
+                    style={{ display: 'none' }}
+                    checked={ingDraft.esOpcional}
+                    onChange={(e) => setIngDraft({ ...ingDraft, esOpcional: e.target.checked })}
+                  />
                 </div>
                 <Button variant="primary" icon="plus" onClick={addIngredient} style={{ height: 44 }}>
-                  Agregar
+                  Añadir
                 </Button>
               </div>
+            </div>
 
-              {/* Quick-add common */}
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--rule-soft)' }}>
-                <div className="eyebrow" style={{ marginBottom: 10, fontSize: 10 }}>Comunes</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {['Sal', 'Pimienta', 'Aceite', 'Cebolla', 'Ajo', 'Harina', 'Huevo'].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setIngDraft({ ...ingDraft, nombre: s })}
-                      className="chip"
-                      style={{ height: 28, fontSize: 12 }}
-                    >
-                      + {s}
+
+            {form.ingredientes.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--rule)' }}>
+                {form.ingredientes.map((ing, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 4px', borderBottom: '1px solid var(--rule-soft)' }}>
+                    <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', width: 24 }}>{String(i + 1).padStart(2, '0')}</span>
+                    <span style={{ flex: 1, fontSize: 15 }}>{ing.nombre} {ing.esOpcional && <span className="text-muted" style={{ fontSize: 12 }}>(opcional)</span>}</span>
+                    <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>{ing.cantidad}</span>
+                    <button onClick={() => removeIngredient(i)} className="btn btn-icon btn-ghost btn-sm focus-ring" style={{ color: 'var(--ink-3)' }}>
+                      <Icon name="trash" size={13} />
+
                     </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Ingredient list */}
-            <div style={{ marginBottom: 32 }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-                <h3 className="font-display" style={{ fontSize: 22, margin: 0 }}>
-                  Tu lista ({ingredients.length})
-                </h3>
-                {ingredients.length > 0 && (
-                  <button
-                    className="btn-link"
-                    onClick={() => setIngredients([])}
-                    style={{ fontSize: 13, color: 'var(--ink-3)' }}
-                  >
-                    Vaciar
-                  </button>
-                )}
-              </div>
-
-              {ingredients.length === 0 ? (
-                <div style={{
-                  padding: 40, textAlign: 'center',
-                  background: 'var(--paper)',
-                  border: '1px dashed var(--rule)',
-                  borderRadius: 'var(--radius)',
-                  color: 'var(--ink-3)',
-                  fontSize: 14,
-                }}>
-                  Todavía no agregaste ningún ingrediente
-                </div>
-              ) : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--rule)' }}>
-                  {ingredients.map((ing, i) => (
-                    <li key={i} style={{
-                      display: 'flex', alignItems: 'center', gap: 16,
-                      padding: '14px 4px',
-                      borderBottom: '1px solid var(--rule-soft)',
-                    }}>
-                      <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', width: 24 }}>
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <span style={{ flex: 1, fontSize: 15 }}>{ing.nombre}</span>
-                      <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>{ing.cantidad}</span>
-                      <button
-                        onClick={() => setIngredients(ingredients.filter((_, j) => j !== i))}
-                        className="btn btn-icon btn-ghost btn-sm"
-                        aria-label="Quitar"
-                        style={{ color: 'var(--ink-3)' }}
-                      >
-                        <Icon name="trash" size={13} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {error && (
-              <div style={{
-                padding: '10px 14px',
-                background: 'rgba(184,64,31,.08)',
-                border: '1px solid rgba(184,64,31,.2)',
-                borderRadius: 'var(--radius)',
-                color: 'var(--accent)',
-                fontSize: 14,
-                marginBottom: 20,
-              }}>{error}</div>
+                  </li>
+                ))}
+              </ul>
             )}
+          </section>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24, borderTop: '1px solid var(--rule)' }}>
-              <Button variant="ghost" icon="back" onClick={() => setStep(1)}>
-                Atrás
-              </Button>
-              <Button variant="accent" iconRight="check" disabled={!canSubmit || saving} onClick={submit}>
-                {saving ? 'Publicando…' : 'Publicar receta'}
-              </Button>
-            </div>
-          </div>
-        )}
+          <hr style={{ border: 0, borderTop: '1px solid var(--rule)' }} />
 
-        {/* Step 3: success */}
-        {step === 3 && (
-          <div className="fade-in" style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{
-              width: 80, height: 80, borderRadius: 999,
-              background: 'var(--accent)', color: 'var(--paper)',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 24px',
-            }}>
-              <Icon name="check" size={32} stroke={2.4}/>
+          {/* Bloque Pasos */}
+          <section>
+            <div className="eyebrow" style={{ marginBottom: 24, fontSize: 12, color: 'var(--ink-3)' }}>5. Pasos</div>
+            <StepEditor steps={form.pasos} onChange={(pasos) => setForm({ ...form, pasos })} />
+          </section>
+
+          {error && (
+            <div style={{ padding: '12px 16px', background: 'rgba(184,64,31,.08)', border: '1px solid rgba(184,64,31,.2)', borderRadius: 'var(--radius)', color: 'var(--accent)', fontSize: 14 }}>
+              {error}
             </div>
-            <h1 className="font-display" style={{ fontSize: 56, margin: '0 0 12px', letterSpacing: '-0.025em' }}>
-              ¡Publicada!
-            </h1>
-            <p className="text-muted" style={{ fontSize: 17, marginBottom: 32 }}>
-              "{form.titulo}" ya está en la colección.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
+
+      {/* Footer sticky */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--paper)', borderTop: '1px solid var(--rule)', padding: '16px 32px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10
+      }}>
+        <Button variant="ghost" onClick={onBack}>Cancelar</Button>
+        <Button variant="accent" iconRight="check" disabled={!canSubmit || saving} onClick={submit}>
+          {saving ? 'Publicando...' : 'Guardar receta'}
+        </Button>
       </div>
     </div>
   );
 };
-
-const Step = ({ n, active, done, label }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-    <span style={{
-      width: 28, height: 28, borderRadius: 999,
-      background: done ? 'var(--accent)' : active ? 'var(--ink)' : 'var(--paper)',
-      color: (done || active) ? 'var(--paper)' : 'var(--ink-3)',
-      border: `1px solid ${active || done ? 'transparent' : 'var(--rule)'}`,
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 13, fontWeight: 500,
-      transition: 'all .25s',
-    }}>
-      {done ? <Icon name="check" size={13} stroke={2.4}/> : n}
-    </span>
-    <span style={{ fontSize: 13, color: active ? 'var(--ink)' : 'var(--ink-3)', fontWeight: active ? 500 : 400 }}>
-      {label}
-    </span>
-  </div>
-);
 
 Object.assign(window, { CreateRecipeScreen });

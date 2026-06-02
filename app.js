@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import usuariosRoutes from './routes/usuariosRoutes.js';
 import recetasRoutes from './routes/recetasRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.static('FrontEnd'));
 // Rutas
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/recetas', recetasRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Endpoint de salud
 app.get('/health', (req, res) => {
