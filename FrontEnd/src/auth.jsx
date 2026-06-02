@@ -48,11 +48,11 @@ const AuthScreen = ({ onAuth }) => {
   };
 
   return (
-    <div data-screen-label="Auth" style={{ minHeight: '100vh', background: 'var(--cream)' }}>
+    <div data-screen-label="Auth" style={{ height: '100vh', overflow: 'hidden', background: 'var(--cream)' }}>
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 1fr)',
-        minHeight: '100vh',
+        height: '100vh',
       }}>
         {/* LEFT — editorial */}
         <div className="auth-left" style={{

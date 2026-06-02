@@ -313,3 +313,130 @@ export const toggleFavorito = async (req, res) => {
         await session.close();
     }
 };
+
+// 7. Seguir Usuario
+// POST /api/usuarios/:nombre/seguir
+// Body: { usuarioASeguir }
+export const seguirUsuario = async (req, res) => {
+    const { nombre } = req.params;
+    const { usuarioASeguir } = req.body;
+
+    if (!usuarioASeguir) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: usuarioASeguir' });
+    }
+
+    if (nombre === usuarioASeguir) {
+        return res.status(400).json({ error: 'Un usuario no puede seguirse a sí mismo' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u1:Usuario {nombre: $nombre})
+            MATCH (u2:Usuario {nombre: $usuarioASeguir})
+            MERGE (u1)-[:SIGUE]->(u2)
+            RETURN u1.nombre AS seguidor, u2.nombre AS seguido
+        `;
+        const result = await session.run(query, { nombre, usuarioASeguir });
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'No se encontraron uno o ambos usuarios' });
+        }
+        res.status(200).json({ message: 'Usuario seguido exitosamente' });
+    } catch (error) {
+        console.error('Error al seguir usuario:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 8. Dejar de seguir Usuario
+// POST /api/usuarios/:nombre/dejardeseguir
+// Body: { usuarioADejar }
+export const dejarDeSeguirUsuario = async (req, res) => {
+    const { nombre } = req.params;
+    const { usuarioADejar } = req.body;
+
+    if (!usuarioADejar) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: usuarioADejar' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u1:Usuario {nombre: $nombre})-[s:SIGUE]->(u2:Usuario {nombre: $usuarioADejar})
+            DELETE s
+        `;
+        await session.run(query, { nombre, usuarioADejar });
+        res.status(200).json({ message: 'Dejaste de seguir al usuario' });
+    } catch (error) {
+        console.error('Error al dejar de seguir usuario:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 9. Obtener Comunidad
+// GET /api/usuarios/:nombre/comunidad
+export const obtenerComunidad = async (req, res) => {
+    const { nombre } = req.params;
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u:Usuario {nombre: $nombre})
+            OPTIONAL MATCH (u)-[:SIGUE]->(seguido:Usuario)
+            OPTIONAL MATCH (seguidor:Usuario)-[:SIGUE]->(u)
+            RETURN collect(DISTINCT seguido.nombre) AS seguidos, collect(DISTINCT seguidor.nombre) AS seguidores
+        `;
+        const result = await session.run(query, { nombre });
+        if (result.records.length === 0 || result.records[0].get('seguidores') === null) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        
+        const record = result.records[0];
+        res.status(200).json({
+            comunidad: {
+                seguidos: record.get('seguidos').filter(n => n !== null),
+                seguidores: record.get('seguidores').filter(n => n !== null)
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener comunidad:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 10. Registrar Historial (Cook Mode)
+// POST /api/usuarios/:nombre/historial
+// Body: { tituloReceta }
+export const registrarHistorial = async (req, res) => {
+    const { nombre } = req.params;
+    const { tituloReceta } = req.body;
+
+    if (!tituloReceta) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: tituloReceta' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u:Usuario {nombre: $nombre})
+            MATCH (r:Receta {titulo: $tituloReceta})
+            CREATE (u)-[:COCINO {fecha: datetime()}]->(r)
+            RETURN u.nombre AS usuario, r.titulo AS receta
+        `;
+        const result = await session.run(query, { nombre, tituloReceta });
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Usuario o receta no encontrados' });
+        }
+        res.status(200).json({ message: 'Historial registrado exitosamente' });
+    } catch (error) {
+        console.error('Error al registrar historial:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
