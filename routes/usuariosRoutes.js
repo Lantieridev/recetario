@@ -9,7 +9,8 @@ import {
     seguirUsuario,
     dejarDeSeguirUsuario,
     obtenerComunidad,
-    registrarHistorial
+    registrarHistorial,
+    obtenerExplicacionRecomendacion
 } from '../controllers/usuariosController.js';
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.post('/login', loginUsuario);
 router.post('/', crearUsuario);
 router.get('/:nombre/comunidad', obtenerComunidad);
 router.get('/:nombre/recomendaciones', obtenerRecomendaciones);
+router.get('/:nombre/recomendaciones/:tituloReceta/explicacion', obtenerExplicacionRecomendacion);
 router.get('/:nombre', obtenerUsuario);
 router.post('/:nombre/favoritos/toggle', toggleFavorito);
 router.post('/:nombre/favoritos', agregarFavorito);

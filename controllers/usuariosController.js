@@ -440,3 +440,48 @@ export const registrarHistorial = async (req, res) => {
         await session.close();
     }
 };
+
+
+// GET /api/usuarios/:nombre/recomendaciones/:tituloReceta/explicacion
+export const obtenerExplicacionRecomendacion = async (req, res) => {
+    const { nombre, tituloReceta } = req.params;
+    const session = getSession();
+    try {
+        const query =             MATCH (yo:Usuario {nombre: })-[:GUARDO_FAV]->(r1:Receta)<-[:GUARDO_FAV]-(otro:Usuario)-[:GUARDO_FAV]->(recomendada:Receta {titulo: })
+            RETURN r1, otro
+            LIMIT 1
+        \;
+        
+        const result = await session.run(query, { nombre, tituloReceta });
+        
+        if (result.records.length === 0) {
+            return res.json({ recommendationPath: null });
+        }
+        
+        const record = result.records[0];
+        const r1 = record.get('r1');
+        const otro = record.get('otro');
+        
+        const path = [
+            { nodeId: 'u-me', label: nombre, type: 'User' },
+            { relation: 'GUARDO_FAV' },
+            { nodeId: 'r-' + r1.properties.titulo, label: r1.properties.titulo, type: 'Recipe' },
+            { relation: 'GUARDO_FAV', direction: 'incoming' },
+            { nodeId: 'u-' + otro.properties.nombre, label: otro.properties.nombre, type: 'User' },
+            { relation: 'GUARDO_FAV' },
+            { nodeId: 'r-' + tituloReceta, label: tituloReceta, type: 'Recipe', highlight: true }
+        ];
+
+        res.json({
+            recommendationPath: {
+                reason: 'collaborative_filtering',
+                path: path
+            }
+        });
+    } catch (error) {
+        console.error('Error al explicar recomendacion:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        await session.close();
+    }
+};

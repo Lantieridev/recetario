@@ -1,0 +1,112 @@
+/* ============================================================================
+   Recetario · Sistema visual "Topología de Grafos"
+   Tema: espacio profundo · glassmorphism · nodos neón cálidos
+   ----------------------------------------------------------------------------
+   Tipos de nodo y su color (usados también dentro de cada .jsx como constantes):
+     Recipe      → ámbar / oro
+     Ingredient  → oliva
+     User        → coral / arcilla
+     Allergen    → rojo peligro
+     Category    → naranja sol
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Fondos — negro espacial con tinte cálido */
+  --bg-900: #0b0907;
+  --bg-800: #110d09;
+  --bg-700: #18120b;
+
+  /* Glass */
+  --glass:         rgba(28, 22, 15, 0.55);
+  --glass-strong:  rgba(34, 27, 18, 0.74);
+  --glass-border:  rgba(245, 178, 90, 0.16);
+  --glass-border-strong: rgba(245, 178, 90, 0.30);
+
+  /* Texto */
+  --text-100: #f6efe4;
+  --text-300: #cabda7;
+  --text-500: #8d8273;
+
+  /* Nodos / tipos */
+  --recipe:     #f5a524;
+  --ingredient: #b9c46a;
+  --user:       #e8825a;
+  --allergen:   #ff5347;
+  --category:   #fb8c3c;
+  --accent:     #ffce6b;
+
+  /* Peligro (tarjeta de alergias) */
+  --danger:   #ff4d4d;
+  --danger-2: #ff9a3d;
+
+  /* Tipografía */
+  --font-sans: 'Sora', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Radios y sombras */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --shadow-glow: 0 0 40px -8px rgba(245, 165, 36, 0.35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg-900);
+  color: var(--text-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fondo de página con nebulosa cálida sutil */
+.space-bg {
+  background:
+    radial-gradient(1100px 700px at 78% -10%, rgba(245, 165, 36, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 8% 110%, rgba(232, 130, 90, 0.08), transparent 60%),
+    radial-gradient(700px 500px at 50% 50%, rgba(185, 196, 106, 0.04), transparent 70%),
+    var(--bg-900);
+}
+
+/* ---- Utilidades glass ---------------------------------------------------- */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+.glass-strong {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border-strong);
+  backdrop-filter: blur(26px) saturate(130%);
+  -webkit-backdrop-filter: blur(26px) saturate(130%);
+}
+
+.mono { font-family: var(--font-mono); }
+
+/* Etiqueta técnica tipo "tipo de relación" */
+.rel-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-300);
+}
+
+/* Chip de tipo de nodo */
+.type-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(245,178,90,0.18); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }

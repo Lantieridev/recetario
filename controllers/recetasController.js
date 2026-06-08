@@ -175,10 +175,11 @@ export const listarRecetas = async (req, res) => {
 // GET /api/recetas/buscar
 // Query params: tengo (lista separada por coma), noQuiero (lista separada por coma)
 export const buscarRecetas = async (req, res) => {
-    const { tengo, noQuiero, categoria, dificultad, tiempo } = req.query;
+    const { tengo, noQuiero, alergias, categoria, dificultad, tiempo } = req.query;
 
     const ingredientes_tengo = tengo ? tengo.split(',').map(i => i.trim()).filter(Boolean) : [];
     const ingredientes_no_quiero = noQuiero ? noQuiero.split(',').map(i => i.trim()).filter(Boolean) : [];
+    const alergias_usuario = alergias ? alergias.split(',').map(a => a.trim()).filter(Boolean) : [];
 
     if (ingredientes_tengo.length === 0) {
         return res.status(400).json({ error: 'Debes ingresar al menos un ingrediente en el parámetro "tengo"' });
@@ -194,6 +195,10 @@ export const buscarRecetas = async (req, res) => {
               AND NOT EXISTS {
                 MATCH (r)-[:CONTIENE]->(ex:Ingrediente)
                 WHERE ex.nombre IN $ingredientes_no_quiero
+            }
+              AND NOT EXISTS {
+                MATCH (r)-[:CONTIENE]->(:Ingrediente)-[:PERTENECE_A_FAMILIA]->(a:Alergeno)
+                WHERE a.nombre IN $alergias_usuario
             }
             MATCH (r)-[:CONTIENE]->(i:Ingrediente)
             WHERE i.nombre IN $ingredientes_tengo
@@ -212,6 +217,7 @@ export const buscarRecetas = async (req, res) => {
         const result = await session.run(query, {
             ingredientes_tengo,
             ingredientes_no_quiero,
+            alergias_usuario,
             categoria: categoria || null,
             dificultad: dificultad || null,
             tiempo: tiempo || null
@@ -439,6 +445,101 @@ export const obtenerTendencias = async (req, res) => {
     } catch (error) {
         console.error('Error al obtener tendencias:', error);
         res.status(500).json({ error: 'Error interno', detalle: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+
+// GET /api/recetas/:titulo/grafo
+export const obtenerGrafoReceta = async (req, res) => {
+    const { titulo } = req.params;
+    const session = getSession();
+    try {
+        const query =             MATCH (r:Receta {titulo: })
+            OPTIONAL MATCH (r)-[rel:USA_INGREDIENTE]->(i:Ingrediente)
+            RETURN r, collect(rel) as relations, collect(i) as ingredientes
+        \;
+        const result = await session.run(query, { titulo });
+        
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Receta no encontrada' });
+        }
+
+        const record = result.records[0];
+        const recetaNode = record.get('r');
+        const ingredientes = record.get('ingredientes');
+        
+        const nodes = [];
+        const links = [];
+        
+        const recId = 'r-' + recetaNode.properties.titulo;
+        nodes.push({
+            id: recId,
+            label: recetaNode.properties.titulo,
+            type: 'Recipe',
+            val: 20
+        });
+
+        ingredientes.forEach(ing => {
+            if(ing && ing.properties) {
+                const ingId = 'i-' + ing.properties.nombre;
+                nodes.push({
+                    id: ingId,
+                    label: ing.properties.nombre,
+                    type: 'Ingredient',
+                    val: 10
+                });
+                links.push({
+                    source: recId,
+                    target: ingId,
+                    label: 'USA_INGREDIENTE'
+                });
+            }
+        });
+
+        res.json({ graphData: { nodes, links } });
+    } catch (error) {
+        console.error('Error al obtener grafo de receta:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+
+// POST /api/recetas/ingredientes/:ingrediente/alergenos
+// Body: { alergeno: 'Gluten' }
+export const enlazarAlergeno = async (req, res) => {
+    const { ingrediente } = req.params;
+    const { alergeno } = req.body;
+
+    if (!alergeno) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: alergeno' });
+    }
+
+    const session = getSession();
+    try {
+        const query =             MATCH (i:Ingrediente {nombre: })
+            MERGE (a:Alergeno {nombre: })
+            MERGE (i)-[:PERTENECE_A_FAMILIA]->(a)
+            RETURN i.nombre AS Ingrediente, a.nombre AS Alergeno
+        \;
+        
+        const result = await session.run(query, { ingrediente, alergeno });
+        
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Ingrediente no encontrado' });
+        }
+        
+        res.status(200).json({
+            message: 'Alérgeno enlazado exitosamente',
+            ingrediente: result.records[0].get('Ingrediente'),
+            alergeno: result.records[0].get('Alergeno')
+        });
+    } catch (error) {
+        console.error('Error al enlazar alérgeno:', error);
+        res.status(500).json({ error: error.message });
     } finally {
         await session.close();
     }

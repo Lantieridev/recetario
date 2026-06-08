@@ -9,7 +9,9 @@ import {
     obtenerIngredientes,
     obtenerRecetasSimilares,
     obtenerRecetaDelDia,
-    obtenerTendencias
+    obtenerTendencias,
+    obtenerGrafoReceta,
+    enlazarAlergeno
 } from '../controllers/recetasController.js';
 
 const router = express.Router();
@@ -21,8 +23,10 @@ router.get('/tendencias', obtenerTendencias);
 router.get('/del-dia', obtenerRecetaDelDia);
 router.post('/', crearReceta);
 router.get('/', listarRecetas);
+router.post('/ingredientes/:ingrediente/alergenos', enlazarAlergeno);
 router.post('/:titulo/ingredientes', agregarIngrediente);
 router.get('/:titulo/similares', obtenerRecetasSimilares);
+router.get('/:titulo/grafo', obtenerGrafoReceta);
 router.get('/:titulo', obtenerReceta);
 
 export default router;
