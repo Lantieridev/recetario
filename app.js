@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import usuariosRoutes from './routes/usuariosRoutes.js';
 import recetasRoutes from './routes/recetasRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import b2bRoutes from './routes/b2bRoutes.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.static('FrontEnd'));
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/recetas', recetasRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/b2b', b2bRoutes);
 
 // Endpoint de salud
 app.get('/health', (req, res) => {
