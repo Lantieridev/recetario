@@ -38,14 +38,21 @@ El frontend actualmente está en fase de transición. Tenemos el esqueleto funci
 
 ---
 
-## 🚀 Ideas Posibles (Roadmap Visión 2.0)
-Para llevar este proyecto a nivel de Startup "FoodTech", las próximas evoluciones matemáticas a realizar con grafos serían:
+## 🚀 Roadmap Visión 2.0 y Modelo de Negocios (B2B)
 
-1. **Motor de Alacena "Zero Waste" (Rutas Mínimas):**
-   * *Concepto:* El usuario declara qué le sobra en la heladera. Neo4j calcula un camino matemático (Shortest Path) para encadenar recetas durante 3 días asegurando que gaste hasta el último gramo de comida antes de que se pudra.
-2. **Sinergia Nutricional (Grafo Científico):**
-   * *Concepto:* Si una receta tiene mucho Hierro, el grafo detecta que se necesita Vitamina C para absorberlo, buscando en la BD una guarnición o bebida puente que la contenga para sugerir un "Combo Perfecto".
-3. **Clustering de Sabores (Graph Data Science):**
-   * *Concepto:* Usar algoritmos de Machine Learning en grafos (Louvain, Label Propagation) para agrupar recetas basándose en las combinaciones moleculares de sus ingredientes, descubriendo "Cocinas Ocultas" que los humanos no categorizamos.
-4. **Planificador Semanal Automático:**
-   * *Concepto:* Dado un presupuesto y objetivo calórico, el motor extrae un "Subgrafo" armando la lista de compras optimizada y el menú de lunes a domingo sin duplicar mermas.
+Para que el proyecto sea financieramente viable y escalable a nivel Startup, el modelo de negocios se apalanca puramente en vender la inteligencia del grafo (B2B), no en cobrarle al usuario final (B2C).
+
+### 1. El Motor Central: "Graph Bidding" (Nodos Patrocinados Dinámicos)
+El núcleo comercial es un sistema de subastas algorítmicas. No vendemos banners publicitarios, vendemos **peso matemático en el algoritmo de recomendación**.
+* **El Concepto:** Las empresas pujan por tener la mayor *centralidad* en el grafo. Si una empresa paga por patrocinar un ingrediente, reducimos matemáticamente el "costo" (`weight`) de recorrer la arista hacia ese nodo en la base de datos.
+* **El Resultado:** Cuando Neo4j busca el camino más corto (Shortest Path / Dijkstra) para sugerirle una receta o un ingrediente al usuario, el algoritmo fluye *naturalmente* hacia el nodo patrocinado porque es el camino más "barato" de recorrer.
+* **Cobro:** Modelo CPC (Costo por Clic) o por "Impresión Algorítmica" (cada vez que el algoritmo selecciona ese nodo por sobre otro).
+
+**Casos de uso del Graph Bidding:**
+* **Marcas de Alimentos:** Hellmann's puja para que el nodo "Mayonesa" derive en su marca específica cuando los usuarios buscan recetas de ensaladas.
+* **Supermercados (Liquidación de Stock Inteligente):** En lugar de hacer una integración compleja de carritos, si un supermercado necesita deshacerse de toneladas de pollo antes de que venza, usan nuestro sistema de Bidding para patrocinar masivamente el nodo "Pollo". El algoritmo ajusta los pesos instantáneamente y miles de usuarios empiezan a recibir sugerencias óptimas de recetas con pollo, liquidando el inventario del supermercado a cambio de una tarifa de patrocinio.
+
+### 2. Visión a Futuro (Horizonte 3.0): Data-as-a-Service para I+D
+A muy largo plazo, la base de datos anonimizada se convierte en un producto en sí mismo.
+* Corporaciones alimenticias (ej. Nestlé) pagan una suscripción Enterprise para acceder al grafo.
+* Utilizan algoritmos de *Graph Data Science* para descubrir tendencias emergentes, analizando qué combinaciones raras de ingredientes están haciendo los usuarios en sus casas antes de que se vuelvan populares comercialmente.
