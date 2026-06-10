@@ -419,12 +419,38 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
             {/* Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
               <button
-                className="btn-link"
                 onClick={clearAll}
                 disabled={tengo.length === 0 && noQuiero.length === 0 && !input.trim() && !filters.categoria && !filters.dificultad && !filters.tiempoRango}
-                style={{ fontSize: 13, color: 'var(--ink-3)' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 40,
+                  padding: '0 16px',
+                  borderRadius: '999px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--ink-2)',
+                  border: '1px solid var(--rule)',
+                  background: 'transparent',
+                  transition: 'all 0.18s ease',
+                  opacity: (tengo.length === 0 && noQuiero.length === 0 && !input.trim() && !filters.categoria && !filters.dificultad && !filters.tiempoRango) ? 0.4 : 1,
+                  cursor: (tengo.length === 0 && noQuiero.length === 0 && !input.trim() && !filters.categoria && !filters.dificultad && !filters.tiempoRango) ? 'not-allowed' : 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (e.currentTarget.style.cursor !== 'not-allowed') {
+                    e.currentTarget.style.background = 'var(--paper-2)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.color = 'var(--accent)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'var(--rule)';
+                  e.currentTarget.style.color = 'var(--ink-2)';
+                }}
               >
-                Limpiar todo
+                <Icon name="close" size={12} /> Limpiar todo
               </button>
               <Button variant="accent" icon="sparkle" onClick={buscar} disabled={loading || (tengo.length === 0 && !input.trim())}>
                 {loading ? 'Buscando…' : 'Buscar recetas'}
