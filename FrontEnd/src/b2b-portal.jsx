@@ -32,7 +32,13 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
     tier: user?.tier || 'BRAND',
     desc: TIER_DESCRIPTIONS[user?.tier || 'BRAND'] || 'Acceso Corporativo seguro.'
   };
-  const allIngredients = window.api.todosIngredientes();
+
+  const [allIngredients, setAllIngredients] = useState([]);
+  const initializedRef = React.useRef(false);
+
+  useEffect(() => {
+    setAllIngredients(window.api.todosIngredientes());
+  }, []);
 
   // Reset response when switching user/apiKey
   useEffect(() => {
@@ -41,10 +47,11 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
     setTrends([]);
   }, [selectedApiKey]);
 
-  // Set default ingredient
+  // Set default ingredient once
   useEffect(() => {
-    if (allIngredients.length > 0 && !ingrediente) {
+    if (allIngredients.length > 0 && !initializedRef.current) {
       setIngrediente(allIngredients[0]);
+      initializedRef.current = true;
     }
   }, [allIngredients]);
 
