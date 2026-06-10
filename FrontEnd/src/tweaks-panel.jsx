@@ -155,12 +155,11 @@ const __TWEAKS_STYLE = `
   .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
   .twk-gear-btn{position:fixed;right:20px;bottom:20px;z-index:2147483646;width:48px;height:48px;
-    border-radius:50%;background:rgba(28,24,20,.85);color:#fff;
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-    border:1px solid rgba(255,255,255,.15);cursor:pointer;
-    box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
-    transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .3s}
-  .twk-gear-btn:hover{transform:scale(1.1);background-color:var(--accent,#B8401F)}
+    border-radius:50%;background:var(--ink);color:var(--paper);
+    border:1px solid var(--rule);cursor:pointer;
+    box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .3s,color .3s}
+  .twk-gear-btn:hover{transform:scale(1.1);background-color:var(--accent,#B8401F);color:var(--paper)}
   .twk-gear-btn svg{width:22px;height:22px;transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
   .twk-gear-btn:hover svg{transform:rotate(90deg)}
 `;
