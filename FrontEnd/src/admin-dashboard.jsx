@@ -23,6 +23,7 @@ const AdminDashboardScreen = ({ user }) => {
   // Form states
   const [partnerName, setPartnerName] = useState('');
   const [partnerTier, setPartnerTier] = useState('BRAND');
+  const [partnerDomain, setPartnerDomain] = useState('');
   const [submittingPartner, setSubmittingPartner] = useState(false);
   
   // Association selectors mapping
@@ -76,15 +77,17 @@ const AdminDashboardScreen = ({ user }) => {
 
   const handleCreatePartner = async (e) => {
     e.preventDefault();
-    if (!partnerName.trim()) return;
+    if (!partnerName.trim() || !partnerDomain.trim()) return;
     setSubmittingPartner(true);
     try {
       await window.api.adminCreatePartner(user.nombre, {
         nombre: partnerName.trim(),
-        tier: partnerTier
+        tier: partnerTier,
+        dominio: partnerDomain.trim()
       });
-      toast(`Empresa ${partnerName} registrada correctamente.`);
+      toast(`Empresa ${partnerName} registrada con dominio @${partnerDomain.trim().toLowerCase()}.`);
       setPartnerName('');
+      setPartnerDomain('');
       loadAllData();
     } catch (err) {
       toast(`Error: ${err.error || 'No se pudo crear la empresa'}`);
@@ -116,6 +119,16 @@ const AdminDashboardScreen = ({ user }) => {
       loadAllData();
     } catch (err) {
       toast(`Error: ${err.error || 'No se pudo promover al usuario'}`);
+    }
+  };
+
+  const handleConfirmUser = async (usuarioNombre) => {
+    try {
+      await window.api.adminConfirmUser(user.nombre, usuarioNombre);
+      toast(`Acceso B2B verificado y habilitado para ${usuarioNombre}.`);
+      loadAllData();
+    } catch (err) {
+      toast(`Error: ${err.error || 'No se pudo confirmar al usuario'}`);
     }
   };
 
@@ -205,6 +218,18 @@ const AdminDashboardScreen = ({ user }) => {
                 </div>
 
                 <div className="field">
+                  <label className="field-label">Dominio de Correo Electrónico</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Ej: hellmanns.com, nestle.com"
+                    value={partnerDomain}
+                    onChange={e => setPartnerDomain(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="field">
                   <label className="field-label">Nivel de Suscripción (Tier)</label>
                   <select
                     className="select"
@@ -246,6 +271,7 @@ const AdminDashboardScreen = ({ user }) => {
                     }}>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{p.nombre}</div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>@{p.dominio}</div>
                         <span style={{
                           fontSize: 9,
                           fontWeight: 700,
@@ -284,7 +310,7 @@ const AdminDashboardScreen = ({ user }) => {
           <div style={{ background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-xl)', padding: 32 }}>
             <h2 className="font-display" style={{ fontSize: 24, margin: '0 0 8px', letterSpacing: '-0.01em' }}>Control de Roles y Accesos B2B</h2>
             <p className="text-muted" style={{ fontSize: 13, margin: '0 0 24px' }}>
-              Promové usuarios registrados comunes a la categoría de socios corporativos vinculándolos a su marca.
+              Promové usuarios registrados comunes a la categoría de socios corporativos vinculándolos a su marca. Los usuarios que se registran con el dominio oficial de la marca aparecen aquí con estado Pendiente de Confirmación.
             </p>
 
             {loadingUsers ? (
@@ -295,7 +321,7 @@ const AdminDashboardScreen = ({ user }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {users.map(u => {
                   const isUserAdmin = u.isAdmin;
-                  if (isUserAdmin) return null; // No mostrar al Admin en la lista para no auto-desvincularse
+                  if (isUserAdmin) return null; // No mostrar al Admin en la lista
 
                   return (
                     <div key={u.nombre} style={{
@@ -315,7 +341,7 @@ const AdminDashboardScreen = ({ user }) => {
                         </div>
                         <div className="text-muted" style={{ fontSize: 12 }}>{u.mail}</div>
                         {u.partner && (
-                          <div style={{ marginTop: 8 }}>
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                             <span style={{
                               fontSize: 10,
                               fontWeight: 600,
@@ -327,19 +353,42 @@ const AdminDashboardScreen = ({ user }) => {
                             }}>
                               Socio B2B: {u.partner.nombre} ({u.partner.tier})
                             </span>
+                            <span style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              color: u.partner.activo ? 'var(--cat-veg)' : 'var(--cat-postre)',
+                              background: 'var(--cream)',
+                              border: `1px solid ${u.partner.activo ? 'var(--cat-veg)' : 'var(--cat-postre)'}`,
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              display: 'inline-block'
+                            }}>
+                              {u.partner.activo ? 'Confirmado' : 'Pendiente'}
+                            </span>
                           </div>
                         )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         {u.partner ? (
-                          <button
-                            onClick={() => handleDissociateUser(u.nombre)}
-                            className="btn btn-sm"
-                            style={{ background: 'rgba(184,64,31,0.06)', color: 'var(--accent)', border: '1px solid rgba(184,64,31,0.15)' }}
-                          >
-                            Quitar Acceso B2B
-                          </button>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {!u.partner.activo && (
+                              <button
+                                onClick={() => handleConfirmUser(u.nombre)}
+                                className="btn btn-sm btn-primary"
+                                style={{ height: 36, padding: '0 12px' }}
+                              >
+                                Confirmar Acceso B2B
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDissociateUser(u.nombre)}
+                              className="btn btn-sm"
+                              style={{ background: 'rgba(184,64,31,0.06)', color: 'var(--accent)', border: '1px solid rgba(184,64,31,0.15)', height: 36 }}
+                            >
+                              Quitar Acceso B2B
+                            </button>
+                          </div>
                         ) : (
                           <>
                             <select
