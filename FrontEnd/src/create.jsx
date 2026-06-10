@@ -181,7 +181,11 @@ const StepEditor = ({ steps, onChange, stepErrors }) => {
                 }}
               />
               {hasError && (
-                <span style={{ fontSize: 12, color: 'var(--accent)' }}>⚠ Este paso no puede estar vacío</span>
+                <span style={{ fontSize: 12, color: 'var(--accent)' }}>
+                  {!step.texto.trim()
+                    ? '⚠ Este paso no puede estar vacío'
+                    : '⚠ El tiempo del paso debe ser de al menos 1 minuto'}
+                </span>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -249,8 +253,15 @@ const validate = (form) => {
   if (form.ingredientes.length === 0)
     errors.ingredientes = 'Agregá al menos un ingrediente';
 
-  // Pasos: todos los que existan deben tener texto
-  const stepErrors = form.pasos.map(p => !p.texto.trim());
+  // Pasos: todos los que existan deben tener texto. Si tienen tiempo, debe ser al menos 1 minuto.
+  const stepErrors = form.pasos.map(p => {
+    const stepH = parseInt(p.timer.hs) || 0;
+    const stepM = parseInt(p.timer.min) || 0;
+    const stepTotalMins = stepH * 60 + stepM;
+    const hasTimerInput = (p.timer.hs || '').trim() !== '' || (p.timer.min || '').trim() !== '';
+    const hasTimerError = hasTimerInput && stepTotalMins < 1;
+    return !p.texto.trim() || hasTimerError;
+  });
   if (stepErrors.some(Boolean))
     errors.pasos = stepErrors;
   if (!form.pasos[0]?.texto.trim())
@@ -267,7 +278,15 @@ const ValidationBar = ({ form }) => {
   const tiempoOk = totalMins >= 1;
   const stepsFilled = form.pasos.filter(p => p.texto.trim()).length;
   const stepsTotal = form.pasos.length;
-  const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0;
+  const stepErrors = form.pasos.map(p => {
+    const stepH = parseInt(p.timer.hs) || 0;
+    const stepM = parseInt(p.timer.min) || 0;
+    const stepTotalMins = stepH * 60 + stepM;
+    const hasTimerInput = (p.timer.hs || '').trim() !== '' || (p.timer.min || '').trim() !== '';
+    const hasTimerError = hasTimerInput && stepTotalMins < 1;
+    return !p.texto.trim() || hasTimerError;
+  });
+  const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0 && !stepErrors.some(Boolean);
 
   const checks = [
     { key: 'titulo', ok: form.titulo.trim().length >= 3, label: 'Título' },
@@ -429,9 +448,8 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         .filter(p => p.texto.trim())
         .map((p, i) => {
           const cleaned = cleanStepText(p.texto);
-          const timer = p.timer.hs || p.timer.min
-            ? ` [⏱ ${p.timer.hs ? p.timer.hs + 'h ' : ''}${p.timer.min ? p.timer.min + 'min' : ''}]`
-            : '';
+          const formattedTimer = formatTiempo(p.timer.hs, p.timer.min);
+          const timer = formattedTimer ? ` [⏱ ${formattedTimer}]` : '';
           return `${i + 1}. ${cleaned}${timer}`;
         })
         .join('\n');
@@ -866,7 +884,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
           {submitted && !canSubmit && (
             <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>
               {allErrors.tiempo ? '⏱ Ingresá el tiempo de preparación' :
-               allErrors.pasos?.some(Boolean) ? '✏ Completá los pasos faltantes' :
+               allErrors.pasos?.some(Boolean) ? '✏ Completá los pasos o corregí su duración' :
                allErrors.ingredientes ? '🧂 Agregá al menos un ingrediente' :
                allErrors.categoria ? '📂 Elegí una categoría' :
                '✏ Completá los campos requeridos'}
