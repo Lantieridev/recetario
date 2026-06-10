@@ -130,9 +130,10 @@
     return handleResponse(res);
   };
 
-  api.recetaDelDia = async () => {
+  api.recetaDelDia = async (fecha) => {
     await delay();
-    const res = await fetch('/api/recetas/del-dia');
+    const url = fecha ? `/api/recetas/del-dia?fecha=${encodeURIComponent(fecha)}` : '/api/recetas/del-dia';
+    const res = await fetch(url);
     return handleResponse(res);
   };
 

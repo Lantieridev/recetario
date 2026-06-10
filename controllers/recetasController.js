@@ -439,35 +439,37 @@ export const obtenerRecetasSimilares = async (req, res) => {
 };
 
 // 9. Receta del Día
-// GET /api/recetas/del-dia
+// GET /api/recetas/del-dia?fecha=YYYY-MM-DD
 export const obtenerRecetaDelDia = async (req, res) => {
+    let { fecha } = req.query;
+    
+    // Default to today's date if not specified
+    if (!fecha) {
+        fecha = new Date().toISOString().split('T')[0];
+    }
+    
+    // Validate format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        return res.status(400).json({ error: 'Formato de fecha inválido. Debe ser YYYY-MM-DD.' });
+    }
+
     const session = getSession();
     try {
-        // Obtenemos el día del año
-        const start = new Date(new Date().getFullYear(), 0, 0);
-        const diff = new Date() - start + (start.getTimezoneOffset() - new Date().getTimezoneOffset()) * 60 * 1000;
-        const oneDay = 1000 * 60 * 60 * 24;
-        const dayOfYear = Math.floor(diff / oneDay);
-        
-        // Usamos el dayOfYear para saltar y elegir de forma "pseudo-aleatoria" pero determinística por día
-        const query = `
-            MATCH (r:Receta)
-            WITH r ORDER BY r.titulo
-            WITH collect(r) AS recetas
-            WITH recetas, size(recetas) AS total
-            WITH recetas[toInteger($dayOfYear % total)] AS delDia
-            OPTIONAL MATCH (delDia)-[:PERTENECE_A]->(c:Categoria)
-            OPTIONAL MATCH (u:Usuario)-[:CREO]->(delDia)
-            RETURN delDia.titulo AS titulo, delDia.descripcion AS descripcion, delDia.dificultad AS dificultad, 
-                   delDia.tiempo AS tiempo, delDia.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
+        // 1. Check if a Destacada node already exists for this date
+        const checkQuery = `
+            MATCH (d:Destacada {fecha: $fecha})-[:RECETA_DE_HOY]->(r:Receta)
+            OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
+            OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
+            RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
+                   r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
         `;
-        const result = await session.run(query, { dayOfYear });
-        if (result.records.length === 0 || result.records[0].get('titulo') === null) {
-            return res.status(404).json({ error: 'No hay recetas disponibles para receta del día' });
-        }
-        const record = result.records[0];
-        res.status(200).json({
-            receta: {
+        const checkResult = await session.run(checkQuery, { fecha });
+        
+        let receta = null;
+        
+        if (checkResult.records.length > 0 && checkResult.records[0].get('titulo') !== null) {
+            const record = checkResult.records[0];
+            receta = {
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
@@ -475,8 +477,82 @@ export const obtenerRecetaDelDia = async (req, res) => {
                 imagen: record.get('imagen'),
                 categoria: record.get('categoria'),
                 creador: record.get('creador')
+            };
+        } else {
+            // Calculate yesterday's date relative to the target date
+            const dateParts = fecha.split('-');
+            const targetDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]), 12, 0, 0);
+            const yesterdayDate = new Date(targetDate.getTime() - 24 * 60 * 60 * 1000);
+            const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+            
+            // 2. Query to find the most favorited recipe of yesterday
+            const queryYesterday = `
+                MATCH (u:Usuario)-[f:GUARDO_FAV]->(r:Receta)
+                WHERE f.fecha = $yesterdayStr
+                RETURN r.titulo AS titulo, count(u) AS favs
+                ORDER BY favs DESC, r.titulo ASC
+                LIMIT 1
+            `;
+            const resultYesterday = await session.run(queryYesterday, { yesterdayStr });
+            let selectedTitulo = null;
+            
+            if (resultYesterday.records.length > 0) {
+                selectedTitulo = resultYesterday.records[0].get('titulo');
+            } else {
+                // Fallback to the most favorited recipe of all time
+                const queryAllTime = `
+                    MATCH (u:Usuario)-[f:GUARDO_FAV]->(r:Receta)
+                    RETURN r.titulo AS titulo, count(u) AS favs
+                    ORDER BY favs DESC, r.titulo ASC
+                    LIMIT 1
+                `;
+                const resultAllTime = await session.run(queryAllTime);
+                if (resultAllTime.records.length > 0) {
+                    selectedTitulo = resultAllTime.records[0].get('titulo');
+                } else {
+                    // Fallback to first recipe alphabetically
+                    const queryFirst = `
+                        MATCH (r:Receta)
+                        RETURN r.titulo AS titulo
+                        ORDER BY r.titulo ASC
+                        LIMIT 1
+                    `;
+                    const resultFirst = await session.run(queryFirst);
+                    if (resultFirst.records.length > 0) {
+                        selectedTitulo = resultFirst.records[0].get('titulo');
+                    }
+                }
             }
-        });
+            
+            if (!selectedTitulo) {
+                return res.status(404).json({ error: 'No hay recetas disponibles en la base de datos' });
+            }
+            
+            // 3. Create the Destacada node and link it
+            const createQuery = `
+                MATCH (r:Receta {titulo: $selectedTitulo})
+                MERGE (d:Destacada {fecha: $fecha})
+                MERGE (d)-[:RECETA_DE_HOY]->(r)
+                WITH d, r
+                OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
+                OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
+                RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
+                       r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
+            `;
+            const createResult = await session.run(createQuery, { selectedTitulo, fecha });
+            const record = createResult.records[0];
+            receta = {
+                titulo: record.get('titulo'),
+                descripcion: record.get('descripcion'),
+                dificultad: record.get('dificultad'),
+                tiempo: record.get('tiempo'),
+                imagen: record.get('imagen'),
+                categoria: record.get('categoria'),
+                creador: record.get('creador')
+            };
+        }
+        
+        res.status(200).json({ fecha, receta });
     } catch (error) {
         console.error('Error al obtener receta del dia:', error);
         res.status(500).json({ error: 'Error interno', detalle: error.message });
