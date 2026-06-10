@@ -182,6 +182,14 @@
     return handleResponse(res);
   };
 
+  api.validarApiKey = async (apiKey) => {
+    await delay();
+    const res = await fetch('/api/b2b/validate', {
+      headers: { 'X-API-KEY': apiKey }
+    });
+    return handleResponse(res);
+  };
+
   // Exponer listados síncronos para los componentes React
   api.todosIngredientes = () => [...cachedIngredientes];
   api.categorias = () => [...cachedCategorias];
