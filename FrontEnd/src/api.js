@@ -220,12 +220,22 @@
     return handleResponse(res);
   };
 
-  api.adminCreatePartner = async (adminName, { nombre, tier }) => {
+  api.adminCreatePartner = async (adminName, { nombre, tier, dominio }) => {
     await delay();
     const res = await fetch('/api/admin/partners', {
       method: 'POST',
       headers: getAdminHeaders(adminName),
-      body: JSON.stringify({ nombre, tier })
+      body: JSON.stringify({ nombre, tier, dominio })
+    });
+    return handleResponse(res);
+  };
+
+  api.adminConfirmUser = async (adminName, usuarioNombre) => {
+    await delay();
+    const res = await fetch('/api/admin/users/confirm', {
+      method: 'POST',
+      headers: getAdminHeaders(adminName),
+      body: JSON.stringify({ usuarioNombre })
     });
     return handleResponse(res);
   };

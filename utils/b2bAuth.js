@@ -26,7 +26,8 @@ export const b2bAuth = (requiredTier) => {
             const session = getSession();
             try {
                 const query = `
-                    MATCH (u:Usuario {mail: $email})-[:EMPLEADO_DE]->(p:Partner)
+                    MATCH (u:Usuario {mail: $email})-[r:EMPLEADO_DE]->(p:Partner)
+                    WHERE r.activo = true
                     RETURN p.nombre AS nombre, p.tier AS tier
                 `;
                 const result = await session.run(query, { email: credential });

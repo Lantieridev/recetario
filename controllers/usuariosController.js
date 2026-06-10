@@ -26,6 +26,21 @@ export const crearUsuario = async (req, res) => {
         }
 
         const record = result.records[0];
+
+        // Detección y vinculación automática de dominio corporativo B2B (crea la relación inactiva)
+        try {
+            const domainQuery = `
+                MATCH (u:Usuario {nombre: $nombre})
+                WITH u
+                MATCH (p:Partner)
+                WHERE toLower(split(u.mail, '@')[1]) = toLower(p.dominio)
+                MERGE (u)-[:EMPLEADO_DE {activo: false}]->(p)
+            `;
+            await session.run(domainQuery, { nombre });
+        } catch (domainErr) {
+            console.error('Error al pre-vincular dominio corporativo:', domainErr);
+        }
+
         res.status(201).json({
             message: 'Usuario creado exitosamente',
             usuario: {

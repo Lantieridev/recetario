@@ -7,6 +7,7 @@ import {
     adminDeletePartner,
     adminGetUsers,
     adminAssociateUser,
+    adminConfirmUser,
     adminDissociateUser
 } from '../controllers/adminController.js';
 
@@ -21,6 +22,7 @@ router.post('/partners', adminCreatePartner);
 router.delete('/partners/:nombre', adminDeletePartner);
 router.get('/users', adminGetUsers);
 router.post('/users/associate', adminAssociateUser);
+router.post('/users/confirm', adminConfirmUser);
 router.post('/users/dissociate', adminDissociateUser);
 
 export default router;

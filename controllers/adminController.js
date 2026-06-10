@@ -30,10 +30,11 @@ export const adminGetStats = async (req, res) => {
 export const adminGetPartners = async (req, res) => {
     const session = getSession();
     try {
-        const result = await session.run('MATCH (p:Partner) RETURN p.nombre AS nombre, p.tier AS tier ORDER BY p.nombre');
+        const result = await session.run('MATCH (p:Partner) RETURN p.nombre AS nombre, p.tier AS tier, p.dominio AS dominio ORDER BY p.nombre');
         const partners = result.records.map(r => ({
             nombre: r.get('nombre'),
-            tier: r.get('tier')
+            tier: r.get('tier'),
+            dominio: r.get('dominio') || ''
         }));
         res.status(200).json({ partners });
     } catch (error) {
@@ -46,25 +47,27 @@ export const adminGetPartners = async (req, res) => {
 
 // POST /api/admin/partners
 export const adminCreatePartner = async (req, res) => {
-    const { nombre, tier } = req.body;
-    if (!nombre || !tier) {
-        return res.status(400).json({ error: 'Faltan parámetros obligatorios: nombre y tier.' });
+    const { nombre, tier, dominio } = req.body;
+    if (!nombre || !tier || !dominio) {
+        return res.status(400).json({ error: 'Faltan parámetros obligatorios: nombre, tier y dominio.' });
     }
 
     const session = getSession();
     try {
+        const cleanDominio = dominio.trim().toLowerCase();
         const result = await session.run(`
             MERGE (p:Partner {nombre: $nombre})
-            ON CREATE SET p.tier = $tier
-            ON MATCH SET p.tier = $tier
-            RETURN p.nombre AS nombre, p.tier AS tier
-        `, { nombre, tier });
+            ON CREATE SET p.tier = $tier, p.dominio = $cleanDominio
+            ON MATCH SET p.tier = $tier, p.dominio = $cleanDominio
+            RETURN p.nombre AS nombre, p.tier AS tier, p.dominio AS dominio
+        `, { nombre: nombre.trim(), tier, cleanDominio });
 
         res.status(201).json({
             message: 'Partner creado/actualizado exitosamente',
             partner: {
                 nombre: result.records[0].get('nombre'),
-                tier: result.records[0].get('tier')
+                tier: result.records[0].get('tier'),
+                dominio: result.records[0].get('dominio')
             }
         });
     } catch (error) {
@@ -96,8 +99,8 @@ export const adminGetUsers = async (req, res) => {
     try {
         const result = await session.run(`
             MATCH (u:Usuario)
-            OPTIONAL MATCH (u)-[:EMPLEADO_DE]->(p:Partner)
-            RETURN u.nombre AS nombre, u.mail AS mail, u.isAdmin AS isAdmin, p.nombre AS partnerNombre, p.tier AS partnerTier
+            OPTIONAL MATCH (u)-[r:EMPLEADO_DE]->(p:Partner)
+            RETURN u.nombre AS nombre, u.mail AS mail, u.isAdmin AS isAdmin, p.nombre AS partnerNombre, p.tier AS partnerTier, r.activo AS partnerActivo
             ORDER BY u.nombre
         `);
 
@@ -107,7 +110,8 @@ export const adminGetUsers = async (req, res) => {
             isAdmin: !!r.get('isAdmin'),
             partner: r.get('partnerNombre') ? {
                 nombre: r.get('partnerNombre'),
-                tier: r.get('partnerTier')
+                tier: r.get('partnerTier'),
+                activo: r.get('partnerActivo') !== false // defaults to true if property is missing, or checks value
             } : null
         }));
 
@@ -129,14 +133,14 @@ export const adminAssociateUser = async (req, res) => {
 
     const session = getSession();
     try {
-        // Eliminar cualquier asociación B2B anterior y crear la nueva
+        // Eliminar cualquier asociación B2B anterior y crear la nueva pre-confirmada (activo: true)
         const query = `
             MATCH (u:Usuario {nombre: $usuarioNombre})
             MATCH (p:Partner {nombre: $partnerNombre})
             OPTIONAL MATCH (u)-[r:EMPLEADO_DE]->(:Partner)
             DELETE r
             WITH u, p
-            MERGE (u)-[:EMPLEADO_DE]->(p)
+            MERGE (u)-[:EMPLEADO_DE {activo: true}]->(p)
             RETURN u.nombre AS usuario, p.nombre AS partner
         `;
         const result = await session.run(query, { usuarioNombre, partnerNombre });
@@ -153,6 +157,38 @@ export const adminAssociateUser = async (req, res) => {
     } catch (error) {
         console.error('Error al asociar usuario a partner:', error);
         res.status(500).json({ error: 'Error al asociar el usuario.' });
+    } finally {
+        await session.close();
+    }
+};
+
+// POST /api/admin/users/confirm
+export const adminConfirmUser = async (req, res) => {
+    const { usuarioNombre } = req.body;
+    if (!usuarioNombre) {
+        return res.status(400).json({ error: 'Falta parámetro obligatorio: usuarioNombre.' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u:Usuario {nombre: $usuarioNombre})-[r:EMPLEADO_DE]->(:Partner)
+            SET r.activo = true
+            RETURN u.nombre AS usuario
+        `;
+        const result = await session.run(query, { usuarioNombre });
+
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Relación B2B no encontrada para el usuario especificado.' });
+        }
+
+        res.status(200).json({
+            message: 'Usuario verificado y autorizado para operar B2B.',
+            usuario: result.records[0].get('usuario')
+        });
+    } catch (error) {
+        console.error('Error al confirmar usuario:', error);
+        res.status(500).json({ error: 'Error al autorizar el usuario.' });
     } finally {
         await session.close();
     }
