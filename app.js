@@ -41,20 +41,29 @@ const inicializarDatosAdminB2B = async () => {
             ON MATCH SET u.isAdmin = true
         `);
 
-        // Crear partners
+        // Crear partners con sus dominios comerciales
         await session.run(`
-            MERGE (p1:Partner {nombre: 'Hellmanns'}) ON CREATE SET p1.tier = 'BRAND'
-            MERGE (p2:Partner {nombre: 'Carrefour'}) ON CREATE SET p2.tier = 'RETAIL'
-            MERGE (p3:Partner {nombre: 'Nestle'}) ON CREATE SET p3.tier = 'ENTERPRISE'
+            MERGE (p1:Partner {nombre: 'Hellmanns'})
+            ON CREATE SET p1.tier = 'BRAND', p1.dominio = 'hellmanns.com'
+            ON MATCH SET p1.dominio = 'hellmanns.com'
+
+            MERGE (p2:Partner {nombre: 'Carrefour'})
+            ON CREATE SET p2.tier = 'RETAIL', p2.dominio = 'carrefour.com'
+            ON MATCH SET p2.dominio = 'carrefour.com'
+
+            MERGE (p3:Partner {nombre: 'Nestle'})
+            ON CREATE SET p3.tier = 'ENTERPRISE', p3.dominio = 'nestle.com'
+            ON MATCH SET p3.dominio = 'nestle.com'
         `);
 
-        // Crear usuarios de prueba corporativos y sus relaciones
+        // Crear usuarios de prueba corporativos y sus relaciones (pre-confirmadas en la demo)
         await session.run(`
             MERGE (u1:Usuario {nombre: 'Hellmanns'})
             ON CREATE SET u1.mail = 'socio@hellmanns.com', u1.contrasena = 'pass123'
             WITH u1
             MATCH (p1:Partner {nombre: 'Hellmanns'})
-            MERGE (u1)-[:EMPLEADO_DE]->(p1)
+            MERGE (u1)-[r:EMPLEADO_DE]->(p1)
+            SET r.activo = true
         `);
 
         await session.run(`
@@ -62,7 +71,8 @@ const inicializarDatosAdminB2B = async () => {
             ON CREATE SET u2.mail = 'socio@carrefour.com', u2.contrasena = 'pass123'
             WITH u2
             MATCH (p2:Partner {nombre: 'Carrefour'})
-            MERGE (u2)-[:EMPLEADO_DE]->(p2)
+            MERGE (u2)-[r:EMPLEADO_DE]->(p2)
+            SET r.activo = true
         `);
 
         await session.run(`
@@ -70,7 +80,8 @@ const inicializarDatosAdminB2B = async () => {
             ON CREATE SET u3.mail = 'socio@nestle.com', u3.contrasena = 'pass123'
             WITH u3
             MATCH (p3:Partner {nombre: 'Nestle'})
-            MERGE (u3)-[:EMPLEADO_DE]->(p3)
+            MERGE (u3)-[r:EMPLEADO_DE]->(p3)
+            SET r.activo = true
         `);
 
         console.log('✅ Usuarios demo B2B y administrador asegurados.');
