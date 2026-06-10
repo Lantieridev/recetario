@@ -45,7 +45,19 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   };
 
   useEffect(() => {
-    setAllIngs(window.api.todosIngredientes());
+    const ings = window.api.todosIngredientes();
+    if (ings.length > 0) {
+      setAllIngs(ings);
+    } else {
+      fetch('/api/recetas/ingredientes')
+        .then(r => r.json())
+        .then(data => {
+          if (data.ingredientes) {
+            setAllIngs(data.ingredientes);
+          }
+        })
+        .catch(err => console.error('Error fetching ingredients in search screen:', err));
+    }
     window.api.obtenerUsuario(user.nombre).then(r => setFavs(new Set(r.usuario.recetasFavoritas)));
   }, [user]);
 
@@ -57,12 +69,37 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   }, [input, tengo, noQuiero, allIngs]);
 
   const add = (ing) => {
-    const v = (ing ?? input).trim();
-    if (!v) return;
+    const rawVal = (ing ?? input).trim();
+    if (!rawVal) return;
+    
+    const lower = rawVal.toLowerCase();
+    let match = allIngs.find(i => i.toLowerCase() === lower);
+    if (!match) {
+      let alternative = null;
+      if (lower.endsWith('s') && lower.length > 3) {
+        alternative = lower.slice(0, -1);
+      } else if (lower.length > 2) {
+        alternative = lower + 's';
+      }
+      if (alternative) {
+        match = allIngs.find(i => i.toLowerCase() === alternative);
+      }
+    }
+    
+    let finalVal = match;
+    if (!finalVal) {
+      if (lower.endsWith('s') && lower.length > 3) {
+        const singular = lower.slice(0, -1);
+        finalVal = singular.charAt(0).toUpperCase() + singular.slice(1);
+      } else {
+        finalVal = lower.charAt(0).toUpperCase() + lower.slice(1);
+      }
+    }
+
     const target = active === 'tengo' ? tengo : noQuiero;
     const setter = active === 'tengo' ? setTengo : setNoQuiero;
-    if (target.includes(v)) return;
-    setter([...target, v]);
+    if (target.includes(finalVal)) return;
+    setter([...target, finalVal]);
     setInput('');
   };
 
