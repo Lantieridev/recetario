@@ -17,21 +17,33 @@ const AuthScreen = ({ onAuth }) => {
     setLoading(true);
     try {
       if (userType === 'b2b') {
-        if (!apiKeyInput.trim()) {
-          throw { error: 'Por favor, ingresá una API Key válida.' };
+        const { usuario } = await window.api.login({ nombre: form.nombre.trim(), contrasena: form.contrasena });
+        try {
+          const res = await window.api.validarApiKey(usuario.mail);
+          const corporateUser = {
+            nombre: usuario.nombre,
+            mail: usuario.mail,
+            tier: res.client.tier,
+            apiKey: usuario.mail,
+            isB2B: true
+          };
+          toast(`Bienvenido socio B2B: ${corporateUser.nombre}`);
+          onAuth(corporateUser);
+        } catch (b2bErr) {
+          throw { error: 'Acceso Denegado. Este usuario no está asociado a ninguna marca comercial.' };
         }
-        const res = await window.api.validarApiKey(apiKeyInput.trim());
-        const corporateUser = {
-          nombre: res.client.nombre,
-          tier: res.client.tier,
-          apiKey: apiKeyInput.trim(),
-          isB2B: true
-        };
-        toast(`Bienvenido socio B2B: ${corporateUser.nombre}`);
-        onAuth(corporateUser);
       } else {
         if (mode === 'login') {
-          const { usuario } = await window.api.login({ nombre: form.nombre, contrasena: form.contrasena });
+          const { usuario } = await window.api.login({ nombre: form.nombre.trim(), contrasena: form.contrasena });
+          // Verificar en background si el usuario es Admin o socio B2B
+          try {
+            const res = await window.api.validarApiKey(usuario.mail);
+            usuario.isB2B = true;
+            usuario.apiKey = usuario.mail;
+            usuario.tier = res.client.tier;
+          } catch (b2bErr) {
+            // Usuario normal o Admin
+          }
           toast(`Bienvenida, ${usuario.nombre}`);
           onAuth(usuario);
         } else {
@@ -56,6 +68,14 @@ const AuthScreen = ({ onAuth }) => {
         nombre,
         contrasena: nombre === 'Ornella' ? 'pass123' : nombre === 'Juan' ? 'pass456' : 'pass789',
       });
+      // Verificar si es B2B/Admin en background
+      try {
+        const res = await window.api.validarApiKey(usuario.mail);
+        usuario.isB2B = true;
+        usuario.apiKey = usuario.mail;
+        usuario.tier = res.client.tier;
+      } catch (e) {}
+
       toast(`Bienvenida, ${usuario.nombre}`);
       onAuth(usuario);
     } catch (err) {
@@ -65,22 +85,27 @@ const AuthScreen = ({ onAuth }) => {
     }
   };
 
-  const quickB2BLogin = async (apiKey) => {
-    setApiKeyInput(apiKey);
+  const quickB2BLogin = async (username) => {
+    setForm({ nombre: username, mail: '', contrasena: 'pass123' });
     setError(null);
     setLoading(true);
     try {
-      const res = await window.api.validarApiKey(apiKey);
+      const { usuario } = await window.api.login({
+        nombre: username,
+        contrasena: 'pass123',
+      });
+      const res = await window.api.validarApiKey(usuario.mail);
       const corporateUser = {
-        nombre: res.client.nombre,
+        nombre: usuario.nombre,
+        mail: usuario.mail,
         tier: res.client.tier,
-        apiKey: apiKey,
+        apiKey: usuario.mail,
         isB2B: true
       };
       toast(`Bienvenido socio B2B: ${corporateUser.nombre}`);
       onAuth(corporateUser);
     } catch (err) {
-      setError(err.error || 'Algo salió mal');
+      setError(err.error || 'Acceso Denegado. La credencial B2B no es válida.');
     } finally {
       setLoading(false);
     }
@@ -231,17 +256,30 @@ const AuthScreen = ({ onAuth }) => {
  
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {userType === 'b2b' ? (
-              <div className="field">
-                <label className="field-label">API Key Corporativa</label>
-                <input
-                  className="input font-mono"
-                  placeholder="Ej: HELLMANNS-1234"
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  autoFocus
-                  required
-                />
-              </div>
+              <>
+                <div className="field">
+                  <label className="field-label">Usuario Corporativo</label>
+                  <input
+                    className="input"
+                    placeholder="Ej: Hellmanns, socio@hellmanns.com"
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    autoFocus
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">Contraseña</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.contrasena}
+                    onChange={(e) => setForm({ ...form, contrasena: e.target.value })}
+                    required
+                  />
+                </div>
+              </>
             ) : (
               <>
                 <div className="field">
@@ -348,15 +386,15 @@ const AuthScreen = ({ onAuth }) => {
                 ))
               ) : (
                 [
-                  { name: 'Hellmann\'s (BRAND)', key: 'HELLMANNS-1234' },
-                  { name: 'Carrefour (RETAIL)', key: 'CARREFOUR-5678' },
-                  { name: 'Nestlé (ENTERPRISE)', key: 'NESTLE-9999' }
+                  { name: 'Hellmann\'s (BRAND)', user: 'Hellmanns' },
+                  { name: 'Carrefour (RETAIL)', user: 'Carrefour' },
+                  { name: 'Nestlé (ENTERPRISE)', user: 'Nestle' }
                 ].map(c => (
                   <button
-                    key={c.key}
+                    key={c.user}
                     type="button"
                     className="chip"
-                    onClick={() => quickB2BLogin(c.key)}
+                    onClick={() => quickB2BLogin(c.user)}
                     disabled={loading}
                   >
                     <span style={{
