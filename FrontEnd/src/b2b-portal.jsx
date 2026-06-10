@@ -223,17 +223,22 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
               <form onSubmit={handleBidding} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
                   <div className="field">
-                    <label className="field-label">Seleccionar Ingrediente a Promocionar</label>
-                    <select 
-                      className="select" 
+                    <label className="field-label">Ingrediente a Promocionar</label>
+                    <input 
+                      type="text"
+                      list="ingredients-list"
+                      className="input"
                       style={{ width: '100%', height: 48 }}
+                      placeholder="Busca o escribe un ingrediente (Ej: Mayonesa Hellmanns)..."
                       value={ingrediente} 
                       onChange={e => setIngrediente(e.target.value)}
-                    >
+                      required
+                    />
+                    <datalist id="ingredients-list">
                       {allIngredients.map(ing => (
-                        <option key={ing} value={ing}>{ing}</option>
+                        <option key={ing} value={ing} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
                   
                   <div className="field">
