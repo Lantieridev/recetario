@@ -298,6 +298,12 @@ const EmptyState = ({ icon = 'pot', title, children, action }) => (
 // ============================================================
 
 const HoursMinutesInput = ({ value = { hs: '', min: '' }, onChange }) => {
+  const blockInvalidChars = (e) => {
+    if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       <div style={{ flex: 1 }}>
@@ -308,6 +314,7 @@ const HoursMinutesInput = ({ value = { hs: '', min: '' }, onChange }) => {
           placeholder="0"
           value={value.hs}
           onChange={(e) => onChange({ ...value, hs: e.target.value })}
+          onKeyDown={blockInvalidChars}
           style={{ textAlign: 'center', padding: '8px 4px' }}
         />
         <div className="font-mono text-muted" style={{ fontSize: 10, textAlign: 'center', marginTop: 4 }}>hs</div>
@@ -319,9 +326,10 @@ const HoursMinutesInput = ({ value = { hs: '', min: '' }, onChange }) => {
           className="input"
           min="0"
           max="59"
-          placeholder="30"
+          placeholder="0"
           value={value.min}
           onChange={(e) => onChange({ ...value, min: e.target.value })}
+          onKeyDown={blockInvalidChars}
           style={{ textAlign: 'center', padding: '8px 4px' }}
         />
         <div className="font-mono text-muted" style={{ fontSize: 10, textAlign: 'center', marginTop: 4 }}>min</div>

@@ -41,6 +41,7 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --max-w: 1240px;
+  --sticky-footer-bg: rgba(251, 247, 239, 0.94);
 }
 
 /* dark mode tokens get merged in app.jsx via data-theme="dark" */
@@ -57,6 +58,7 @@
   --accent: #E07A45;
   --accent-2: #F2A574;
   --accent-soft: #2F2218;
+  --sticky-footer-bg: rgba(27, 22, 18, 0.94);
 }
 
 * { box-sizing: border-box; }

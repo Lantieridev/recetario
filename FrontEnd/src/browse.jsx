@@ -151,7 +151,7 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(28,24,20,0.4) 0%, transparent 40%, rgba(28,24,20,0.9) 100%)', zIndex: 1 }} onClick={onOpen} />
       
       {/* Top Welcome Text overlaid on hero */}
-      <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: 56, color: 'var(--paper)', pointerEvents: 'none' }}>
+      <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: 56, color: '#FBF7EF', pointerEvents: 'none' }}>
         <div className="eyebrow" style={{ marginBottom: 14, color: 'rgba(255,255,255,0.8)' }}>
           Hola {user.nombre}
         </div>
@@ -161,7 +161,7 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
           lineHeight: 1.0,
           letterSpacing: '-0.025em',
           textWrap: 'balance',
-          color: 'var(--paper)'
+          color: '#FBF7EF'
         }}>
           ¿Qué cocinás <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>hoy</em>?
         </h1>
@@ -170,9 +170,9 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
       {/* Bottom Hero Info */}
       <div className="container" style={{ position: 'relative', zIndex: 2, paddingBottom: 48 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{ color: 'var(--paper)', flex: 1, minWidth: 280 }} onClick={onOpen}>
+          <div style={{ color: '#FBF7EF', flex: 1, minWidth: 280 }} onClick={onOpen}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <span style={{ padding: '6px 14px', background: 'var(--accent)', color: 'var(--paper)', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', borderRadius: 999 }}>
+              <span style={{ padding: '6px 14px', background: 'var(--accent)', color: '#FBF7EF', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', borderRadius: 999 }}>
                 {labelText}
               </span>
               <span style={{ opacity: 0.9, fontSize: 13, background: 'rgba(255,255,255,0.12)', padding: '4px 10px', borderRadius: 6 }}>{formattedDate}</span>
@@ -196,31 +196,99 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
           
           {/* Controls side panel */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, zIndex: 10 }}>
+            <style>{`
+              .hero-nav-container {
+                display: flex;
+                align-items: center;
+                background: rgba(20, 16, 12, 0.55);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-radius: 28px;
+                padding: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+                transition: all 0.3s ease;
+              }
+              .hero-nav-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 20px;
+                color: #FBF7EF;
+                background: transparent;
+                border: none;
+                display: flex;
+                align-items: center;
+                justifyContent: center;
+                opacity: 0.8;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              }
+              .hero-nav-btn:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.12);
+                opacity: 1;
+                transform: scale(1.05);
+              }
+              .hero-nav-btn:active:not(:disabled) {
+                transform: scale(0.95);
+              }
+              .hero-nav-btn:disabled {
+                opacity: 0.25;
+                cursor: not-allowed;
+              }
+              .hero-fav-btn {
+                width: 48px;
+                height: 48px;
+                border-radius: 24px;
+                background: var(--accent);
+                color: #FBF7EF;
+                border: none;
+                display: flex;
+                align-items: center;
+                justifyContent: center;
+                box-shadow: 0 4px 14px rgba(184, 64, 31, 0.3);
+                cursor: pointer;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+              }
+              .hero-fav-btn:hover {
+                transform: scale(1.06);
+                box-shadow: 0 6px 20px rgba(184, 64, 31, 0.45);
+                background: var(--accent-2);
+              }
+              .hero-fav-btn:active {
+                transform: scale(0.96);
+              }
+            `}</style>
+
             {/* Weekly Navigation Arrows */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', borderRadius: 28, padding: 4, border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="hero-nav-container">
               <button 
                 onClick={onPrevDay} 
                 disabled={diaOffset >= 6} 
-                className="btn btn-icon focus-ring" 
-                style={{ width: 44, height: 44, borderRadius: 22, color: 'var(--paper)', border: 'none', opacity: diaOffset >= 6 ? 0.3 : 1, cursor: diaOffset >= 6 ? 'not-allowed' : 'pointer' }}
+                className="hero-nav-btn focus-ring" 
                 title="Día anterior"
               >
                 <Icon name="back" size={16} />
               </button>
+              
+              <div style={{ width: 1, height: 18, background: 'rgba(255, 255, 255, 0.15)' }} />
+              
               <button 
                 onClick={onNextDay} 
                 disabled={diaOffset <= 0} 
-                className="btn btn-icon focus-ring" 
-                style={{ width: 44, height: 44, borderRadius: 22, color: 'var(--paper)', border: 'none', opacity: diaOffset <= 0 ? 0.3 : 1, cursor: diaOffset <= 0 ? 'not-allowed' : 'pointer', transform: 'rotate(180deg)' }}
+                className="hero-nav-btn focus-ring" 
                 title="Día siguiente"
               >
-                <Icon name="back" size={16} />
+                <Icon name="arrow" size={16} />
               </button>
             </div>
             
             {/* Favorite button */}
-            <button onClick={onFav} className="btn btn-icon focus-ring" style={{ width: 52, height: 52, borderRadius: 26, background: 'var(--accent)', color: 'var(--paper)', border: 'none', boxShadow: 'var(--shadow-md)' }}>
-              <Icon name={isFav ? 'bookmarkFilled' : 'bookmark'} size={20} />
+            <button 
+              onClick={onFav} 
+              className="hero-fav-btn focus-ring"
+              title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+            >
+              <Icon name={isFav ? 'bookmarkFilled' : 'bookmark'} size={18} />
             </button>
           </div>
         </div>
