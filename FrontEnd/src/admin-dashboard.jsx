@@ -29,6 +29,11 @@ const AdminDashboardScreen = ({ user }) => {
   // Association selectors mapping
   const [selectedUserPartners, setSelectedUserPartners] = useState({});
 
+  // Filter states
+  const [userSearch, setUserSearch] = useState('');
+  const [userCompanyFilter, setUserCompanyFilter] = useState('');
+  const [userStatusFilter, setUserStatusFilter] = useState('');
+
   const toast = useToast();
 
   const loadAllData = () => {
@@ -148,6 +153,37 @@ const AdminDashboardScreen = ({ user }) => {
       [usuarioNombre]: partnerNombre
     }));
   };
+
+  const filteredUsers = users.filter(u => {
+    if (u.isAdmin) return false;
+
+    const query = userSearch.toLowerCase().trim();
+    if (query) {
+      const matchName = u.nombre.toLowerCase().includes(query);
+      const matchMail = u.mail?.toLowerCase().includes(query);
+      if (!matchName && !matchMail) return false;
+    }
+
+    if (userCompanyFilter) {
+      if (userCompanyFilter === 'SIN_EMPRESA') {
+        if (u.partner) return false;
+      } else {
+        if (!u.partner || u.partner.nombre !== userCompanyFilter) return false;
+      }
+    }
+
+    if (userStatusFilter) {
+      if (userStatusFilter === 'PENDING') {
+        if (!u.partner || u.partner.activo) return false;
+      } else if (userStatusFilter === 'CONFIRMED') {
+        if (!u.partner || !u.partner.activo) return false;
+      } else if (userStatusFilter === 'COMMON') {
+        if (u.partner) return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
     <div data-screen-label="Admin Dashboard" className="fade-in" style={{ background: 'var(--cream)', minHeight: '100vh', paddingBottom: 120 }}>
@@ -309,17 +345,62 @@ const AdminDashboardScreen = ({ user }) => {
           {/* Right Column: Users promotion management */}
           <div style={{ background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-xl)', padding: 32 }}>
             <h2 className="font-display" style={{ fontSize: 24, margin: '0 0 8px', letterSpacing: '-0.01em' }}>Control de Roles y Accesos B2B</h2>
-            <p className="text-muted" style={{ fontSize: 13, margin: '0 0 24px' }}>
+            <p className="text-muted" style={{ fontSize: 13, margin: '0 0 20px' }}>
               Promové usuarios registrados comunes a la categoría de socios corporativos vinculándolos a su marca. Los usuarios que se registran con el dominio oficial de la marca aparecen aquí con estado Pendiente de Confirmación.
             </p>
 
+            {/* Filter controls row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Buscar usuario o email..."
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  style={{ height: 38, fontSize: 13 }}
+                />
+              </div>
+
+              <div className="field" style={{ marginBottom: 0 }}>
+                <select
+                  className="select"
+                  value={userCompanyFilter}
+                  onChange={e => setUserCompanyFilter(e.target.value)}
+                  style={{ height: 38, fontSize: 12, padding: '0 8px' }}
+                >
+                  <option value="">Todas las empresas</option>
+                  <option value="SIN_EMPRESA">Sin empresa (Usuario común)</option>
+                  {partners.map(p => (
+                    <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field" style={{ marginBottom: 0 }}>
+                <select
+                  className="select"
+                  value={userStatusFilter}
+                  onChange={e => setUserStatusFilter(e.target.value)}
+                  style={{ height: 38, fontSize: 12, padding: '0 8px' }}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="PENDING">Pendientes de aprobación</option>
+                  <option value="CONFIRMED">B2B Confirmados</option>
+                  <option value="COMMON">Usuarios comunes</option>
+                </select>
+              </div>
+            </div>
+
             {loadingUsers ? (
               <div className="text-muted" style={{ fontSize: 13 }}>Cargando listado de usuarios...</div>
-            ) : users.length === 0 ? (
-              <div className="text-muted" style={{ fontSize: 13 }}>No hay usuarios registrados en el sistema.</div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-muted" style={{ fontSize: 13, textAlign: 'center', padding: '24px 0' }}>
+                {users.length === 0 ? 'No hay usuarios registrados en el sistema.' : 'No se encontraron usuarios con los filtros seleccionados.'}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {users.map(u => {
+                {filteredUsers.map(u => {
                   const isUserAdmin = u.isAdmin;
                   if (isUserAdmin) return null; // No mostrar al Admin en la lista
 
