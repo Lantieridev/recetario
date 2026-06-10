@@ -512,16 +512,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
           {allErrors.titulo && (
             <div style={{ fontSize: 13, color: 'var(--accent-2)', marginTop: 8 }}>⚠ {allErrors.titulo}</div>
           )}
-          {tiempoLabel && (
-            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: 'rgba(244,236,221,.55)', fontWeight: 500 }}>Tiempo promedio de preparación:</span>
-              <span style={{
-                fontSize: 13, fontWeight: 700, color: '#F4ECDD',
-                background: 'rgba(255,255,255,.1)', padding: '3px 12px', borderRadius: 999,
-                border: '1px solid rgba(255,255,255,.15)',
-              }}>{tiempoLabel}</span>
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -628,41 +619,37 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
               {/* ── 2. Tiempo y cocción ── */}
               <section>
                 <SectionHeader number="2" title="Tiempo y cocción" subtitle="Cuánto tarda y cómo se cocina" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
-                  {/* Tiempo */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
+                  {/* Horas */}
                   <div className="field">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <label className="field-label" style={{ margin: 0 }}>Tiempo total *</label>
+                    <label className="field-label">Horas</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      className="input focus-ring"
+                      style={{ borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                      value={form.tiempoHoras}
+                      onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
+                    />
+                  </div>
+                  {/* Minutos */}
+                  <div className="field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="field-label" style={{ margin: 0 }}>Minutos</label>
                       {tiempoLabel && !allErrors.tiempo && (
-                        <span style={{ fontSize: 12, color: '#5a7a40', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>✓ {tiempoLabel}</span>
+                        <span style={{ fontSize: 12, color: '#5a7a40', fontWeight: 500 }}>✓ {tiempoLabel}</span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="input focus-ring"
-                          style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
-                          value={form.tiempoHoras}
-                          onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
-                        />
-                        <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>h</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="input focus-ring"
-                          style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
-                          value={form.tiempoMinutos}
-                          onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
-                        />
-                        <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>min</span>
-                      </div>
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      className="input focus-ring"
+                      style={{ borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                      value={form.tiempoMinutos}
+                      onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
+                    />
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
                   </div>
                   {/* Porciones */}
