@@ -45,6 +45,52 @@ async function seedDatabase() {
         }
 
         console.log('✅ Base de datos poblada exitosamente.');
+
+        // Asegurar usuarios demo B2B y administrador
+        console.log('⏳ Asegurando usuarios demo B2B y administrador...');
+        await session.run(`
+            MERGE (u:Usuario {nombre: 'Admin'})
+            ON CREATE SET u.mail = 'admin@recetario.com', u.contrasena = 'admin123', u.isAdmin = true
+            ON MATCH SET u.isAdmin = true
+        `);
+        await session.run(`
+            MERGE (p1:Partner {nombre: 'Hellmanns'})
+            ON CREATE SET p1.tier = 'BRAND', p1.dominio = 'hellmanns.com'
+            ON MATCH SET p1.dominio = 'hellmanns.com'
+
+            MERGE (p2:Partner {nombre: 'Carrefour'})
+            ON CREATE SET p2.tier = 'RETAIL', p2.dominio = 'carrefour.com'
+            ON MATCH SET p2.dominio = 'carrefour.com'
+
+            MERGE (p3:Partner {nombre: 'Nestle'})
+            ON CREATE SET p3.tier = 'ENTERPRISE', p3.dominio = 'nestle.com'
+            ON MATCH SET p3.dominio = 'nestle.com'
+        `);
+        await session.run(`
+            MERGE (u1:Usuario {nombre: 'Hellmanns'})
+            ON CREATE SET u1.mail = 'socio@hellmanns.com', u1.contrasena = 'pass123'
+            WITH u1
+            MATCH (p1:Partner {nombre: 'Hellmanns'})
+            MERGE (u1)-[r:EMPLEADO_DE]->(p1)
+            SET r.activo = true
+        `);
+        await session.run(`
+            MERGE (u2:Usuario {nombre: 'Carrefour'})
+            ON CREATE SET u2.mail = 'socio@carrefour.com', u2.contrasena = 'pass123'
+            WITH u2
+            MATCH (p2:Partner {nombre: 'Carrefour'})
+            MERGE (u2)-[r:EMPLEADO_DE]->(p2)
+            SET r.activo = true
+        `);
+        await session.run(`
+            MERGE (u3:Usuario {nombre: 'Nestle'})
+            ON CREATE SET u3.mail = 'socio@nestle.com', u3.contrasena = 'pass123'
+            WITH u3
+            MATCH (p3:Partner {nombre: 'Nestle'})
+            MERGE (u3)-[r:EMPLEADO_DE]->(p3)
+            SET r.activo = true
+        `);
+        console.log('✅ Usuarios demo B2B y administrador asegurados.');
     } catch (error) {
         console.error('❌ Error durante el sembrado de la base de datos:', error);
     } finally {

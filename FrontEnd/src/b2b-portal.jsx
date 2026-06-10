@@ -1,6 +1,6 @@
 /* eslint-disable */
 // B2B Portal — Brand & Retailer Dashboard (Fase 2B Premium UI)
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo } = React;
 
 const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
   const selectedApiKey = user?.apiKey || 'HELLMANNS-1234';
@@ -36,8 +36,27 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
   const [allIngredients, setAllIngredients] = useState([]);
   const initializedRef = React.useRef(false);
 
+  const suggestions = useMemo(() => {
+    const q = ingrediente.trim().toLowerCase();
+    if (!q) return [];
+    if (allIngredients.includes(ingrediente.trim())) return [];
+    return allIngredients.filter(i => i.toLowerCase().includes(q)).slice(0, 6);
+  }, [ingrediente, allIngredients]);
+
   useEffect(() => {
-    setAllIngredients(window.api.todosIngredientes());
+    const ings = window.api.todosIngredientes();
+    if (ings.length > 0) {
+      setAllIngredients(ings);
+    } else {
+      fetch('/api/recetas/ingredientes')
+        .then(r => r.json())
+        .then(data => {
+          if (data.ingredientes) {
+            setAllIngredients(data.ingredientes);
+          }
+        })
+        .catch(err => console.error('Error fetching ingredients in B2B portal:', err));
+    }
   }, []);
 
   // Reset response when switching user/apiKey
@@ -229,23 +248,55 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
             {(activeCompany.tier === 'BRAND' || activeCompany.tier === 'RETAIL') && (
               <form onSubmit={handleBidding} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
-                  <div className="field">
+                  <div className="field" style={{ position: 'relative' }}>
                     <label className="field-label">Ingrediente a Promocionar</label>
                     <input 
                       type="text"
-                      list="ingredients-list"
-                      className="input"
+                      className="input focus-ring"
                       style={{ width: '100%', height: 48 }}
-                      placeholder="Busca o escribe un ingrediente (Ej: Mayonesa Hellmanns)..."
+                      placeholder="Busca o escribe un ingrediente..."
                       value={ingrediente} 
                       onChange={e => setIngrediente(e.target.value)}
                       required
                     />
-                    <datalist id="ingredients-list">
-                      {allIngredients.map(ing => (
-                        <option key={ing} value={ing} />
-                      ))}
-                    </datalist>
+                    {suggestions.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: 0, right: 0,
+                        background: 'var(--paper-2)',
+                        border: '1px solid var(--rule)',
+                        borderRadius: 'var(--radius)',
+                        boxShadow: 'var(--shadow-md)',
+                        zIndex: 10,
+                        padding: 6,
+                        display: 'flex', flexDirection: 'column',
+                      }}>
+                        {suggestions.map(s => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setIngrediente(s)}
+                            style={{
+                              textAlign: 'left',
+                              padding: '10px 14px',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: 14,
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              transition: 'background-color .12s',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--ink)'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--rule-soft)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = ''}
+                          >
+                            <span>{s}</span>
+                            <span style={{ color: 'var(--ink-3)', fontSize: 12 }}>↵ Seleccionar</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="field">
