@@ -814,16 +814,17 @@ const CustomDropdown = ({
           onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)',
-            fontSize: 'inherit', color: active ? 'var(--ink)' : 'var(--ink-3)',
+            fontSize: 'inherit', color: active ? 'var(--accent)' : 'var(--ink-3)',
+            fontWeight: active ? '600' : '400',
             fontStyle: 'italic', textDecoration: 'underline', textUnderlineOffset: 4,
-            textDecorationColor: open ? 'var(--ink)' : 'var(--ink-4)', textDecorationThickness: '1px',
+            textDecorationColor: open ? 'var(--accent)' : 'var(--ink-4)', textDecorationThickness: '1.5px',
             cursor: 'pointer', padding: 0, transition: 'color .15s, text-decoration-color .15s',
             background: 'transparent', border: 'none'
           }}
         >
           {accent && active && <span style={{ width: 7, height: 7, borderRadius: 999, background: accent, display: 'inline-block' }}/>}
           {displayValue}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: .5, transform: open ? 'rotate(180deg)' : '', transition: 'transform .18s' }}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: .8, transform: open ? 'rotate(180deg)' : '', transition: 'transform .18s' }}>
             <path d="m2 4 3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
@@ -835,26 +836,57 @@ const CustomDropdown = ({
   return (
     <div ref={ref} style={{ position: 'relative', width: width || '100%' }}>
       {label && (
-        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>{label}</div>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', color: 'var(--ink-2)', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
       )}
       <button
         onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}
         style={{
-          width: '100%', height: 44, padding: '0 14px', background: 'transparent', border: 'none',
-          borderBottom: `1px solid ${open ? 'var(--ink)' : 'var(--rule)'}`, borderRadius: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer',
-          transition: 'border-color .15s',
+          width: '100%',
+          height: 42,
+          padding: '0 14px',
+          background: active ? 'var(--paper-2)' : 'var(--paper)',
+          border: open
+            ? '1.5px solid var(--accent)'
+            : active
+              ? '1.5px solid var(--accent)'
+              : '1px solid var(--rule)',
+          borderRadius: 'var(--radius)',
+          boxShadow: active ? 'var(--shadow-sm)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          transition: 'all .15s ease',
         }}
-        onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderBottomColor = 'var(--ink-3)'; }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderBottomColor = 'var(--rule)'; }}
+        onMouseEnter={(e) => {
+          if (!open && !active) {
+            e.currentTarget.style.borderColor = 'var(--ink-3)';
+            e.currentTarget.style.background = 'var(--paper-2)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!open) {
+            e.currentTarget.style.borderColor = active ? 'var(--accent)' : 'var(--rule)';
+            e.currentTarget.style.background = active ? 'var(--paper-2)' : 'var(--paper)';
+          }
+        }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {accent && active && <span style={{ width: 7, height: 7, borderRadius: 999, background: accent, display: 'inline-block' }}/>}
-          <span style={{ fontFamily: active ? 'var(--font-display)' : 'var(--font-body)', fontSize: active ? 18 : 14, fontStyle: active ? 'italic' : 'normal', color: active ? 'var(--ink)' : 'var(--ink-4)' }}>
+          {active ? (
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', display: 'inline-block' }}/>
+          ) : (
+            accent && <span style={{ width: 6, height: 6, borderRadius: 999, background: accent, display: 'inline-block' }}/>
+          )}
+          <span style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            fontWeight: active ? '600' : '400',
+            color: active ? 'var(--ink)' : 'var(--ink-3)'
+          }}>
             {displayValue}
           </span>
         </span>
-        <svg width="12" height="12" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--ink-3)', transform: open ? 'rotate(180deg)' : '', transition: 'transform .18s' }}>
+        <svg width="12" height="12" viewBox="0 0 10 10" fill="none" style={{ color: active ? 'var(--accent)' : 'var(--ink-3)', transform: open ? 'rotate(180deg)' : '', transition: 'transform .18s' }}>
           <path d="m2 4 3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>

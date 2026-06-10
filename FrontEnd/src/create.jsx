@@ -744,11 +744,15 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
                     {/* Unidad */}
                     <div className="field">
-                      <label className="field-label">Unidad</label>
-                      <select
+                      <CustomDropdown
+                        label="Unidad"
+                        variant="field"
+                        placeholder="Elegir unidad"
                         value={ingDraft.cantidadUnidad}
-                        onChange={(e) => {
-                          const v = e.target.value;
+                        options={UNIDADES_OPTIONS}
+                        optionLabel={(o) => o.label}
+                        optionValue={(o) => o.value}
+                        onChange={(v) => {
                           const isOldEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
                           const isNewEspecial = UNIDADES_ESPECIALES.includes(v);
                           const shouldClear = isNewEspecial || isOldEspecial;
@@ -758,11 +762,8 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                             cantidadVal: shouldClear ? '' : ingDraft.cantidadVal
                           });
                         }}
-                        className="select"
-                        style={{ width: '100%' }}
-                      >
-                        {UNIDADES_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                      </select>
+                        width="100%"
+                      />
                     </div>
 
                     {/* Opcional */}

@@ -357,28 +357,84 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
             </div>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <select className="select" value={filters.categoria} onChange={(e) => setFilters(f => ({ ...f, categoria: e.target.value }))}>
-                <option value="">Toda categoría</option>
-                {cats.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select className="select" value={filters.dificultad} onChange={(e) => setFilters(f => ({ ...f, dificultad: e.target.value }))}>
-                <option value="">Toda dificultad</option>
-                <option value="Baja">Baja</option>
-                <option value="Media">Media</option>
-                <option value="Alta">Alta</option>
-              </select>
-              <select className="select" value={filters.tiempoRango} onChange={(e) => setFilters(f => ({ ...f, tiempoRango: e.target.value }))}>
-                <option value="">Cualquier tiempo</option>
-                {TIME_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
-              </select>
-              <select className="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="">Orden: Por defecto</option>
-                <option value="asc">Tiempo: Menor a Mayor</option>
-                <option value="desc">Tiempo: Mayor a Menor</option>
-              </select>
+              <CustomDropdown
+                placeholder="Toda categoría"
+                value={filters.categoria}
+                options={[{ value: '', label: 'Toda categoría' }, ...cats.map(c => ({ value: c, label: c }))] }
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, categoria: v }))}
+                width="150px"
+              />
+              <CustomDropdown
+                placeholder="Toda dificultad"
+                value={filters.dificultad}
+                options={[
+                  { value: '', label: 'Toda dificultad' },
+                  { value: 'Baja', label: 'Baja' },
+                  { value: 'Media', label: 'Media' },
+                  { value: 'Alta', label: 'Alta' }
+                ]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, dificultad: v }))}
+                width="140px"
+              />
+              <CustomDropdown
+                placeholder="Cualquier tiempo"
+                value={filters.tiempoRango}
+                options={[
+                  { value: '', label: 'Cualquier tiempo' },
+                  ...TIME_RANGES.map(r => ({ value: r.key, label: r.label }))
+                ]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, tiempoRango: v }))}
+                width="150px"
+              />
+              <CustomDropdown
+                placeholder="Orden: Por defecto"
+                value={sortBy}
+                options={[
+                  { value: '', label: 'Orden: Por defecto' },
+                  { value: 'asc', label: 'Tiempo: Menor a Mayor' },
+                  { value: 'desc', label: 'Tiempo: Mayor a Menor' }
+                ]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setSortBy(v)}
+                width="170px"
+              />
               {hasActiveFilters && (
-                <button className="btn btn-link" onClick={() => { setFilters({ categoria: '', dificultad: '', tiempoRango: '' }); setSortBy(''); }}>
-                  Limpiar
+                <button
+                  onClick={() => { setFilters({ categoria: '', dificultad: '', tiempoRango: '' }); setSortBy(''); }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    height: 40,
+                    padding: '0 14px',
+                    borderRadius: '999px',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: 'var(--ink-2)',
+                    border: '1px solid var(--rule)',
+                    background: 'transparent',
+                    transition: 'all 0.18s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--paper-2)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.color = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = 'var(--rule)';
+                    e.currentTarget.style.color = 'var(--ink-2)';
+                  }}
+                >
+                  <Icon name="close" size={12} /> Limpiar
                 </button>
               )}
             </div>
