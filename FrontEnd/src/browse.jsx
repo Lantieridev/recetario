@@ -197,42 +197,33 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
           {/* Controls side panel */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, zIndex: 10 }}>
             <style>{`
-              .hero-nav-container {
-                display: flex;
-                align-items: center;
-                background: rgba(20, 16, 12, 0.55);
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border-radius: 28px;
-                padding: 4px;
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-                transition: all 0.3s ease;
-              }
               .hero-nav-btn {
-                width: 40px;
-                height: 40px;
-                border-radius: 20px;
+                width: 48px;
+                height: 48px;
+                border-radius: 24px;
                 color: #FBF7EF;
-                background: transparent;
-                border: none;
+                background: rgba(255, 255, 255, 0.12);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
                 display: flex;
                 align-items: center;
                 justifyContent: center;
-                opacity: 0.8;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 cursor: pointer;
-                transition: all 0.2s ease;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
               }
               .hero-nav-btn:hover:not(:disabled) {
-                background: rgba(255, 255, 255, 0.12);
-                opacity: 1;
-                transform: scale(1.05);
+                background: rgba(255, 255, 255, 0.22);
+                border-color: rgba(255, 255, 255, 0.4);
+                transform: scale(1.06);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
               }
               .hero-nav-btn:active:not(:disabled) {
-                transform: scale(0.95);
+                transform: scale(0.96);
               }
               .hero-nav-btn:disabled {
-                opacity: 0.25;
+                opacity: 0.3;
                 cursor: not-allowed;
               }
               .hero-fav-btn {
@@ -260,27 +251,23 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
             `}</style>
 
             {/* Weekly Navigation Arrows */}
-            <div className="hero-nav-container">
-              <button 
-                onClick={onPrevDay} 
-                disabled={diaOffset >= 6} 
-                className="hero-nav-btn focus-ring" 
-                title="Día anterior"
-              >
-                <Icon name="back" size={16} />
-              </button>
-              
-              <div style={{ width: 1, height: 18, background: 'rgba(255, 255, 255, 0.15)' }} />
-              
-              <button 
-                onClick={onNextDay} 
-                disabled={diaOffset <= 0} 
-                className="hero-nav-btn focus-ring" 
-                title="Día siguiente"
-              >
-                <Icon name="arrow" size={16} />
-              </button>
-            </div>
+            <button 
+              onClick={onPrevDay} 
+              disabled={diaOffset >= 6} 
+              className="hero-nav-btn focus-ring" 
+              title="Día anterior"
+            >
+              <Icon name="back" size={16} />
+            </button>
+            
+            <button 
+              onClick={onNextDay} 
+              disabled={diaOffset <= 0} 
+              className="hero-nav-btn focus-ring" 
+              title="Día siguiente"
+            >
+              <Icon name="arrow" size={16} />
+            </button>
             
             {/* Favorite button */}
             <button 
