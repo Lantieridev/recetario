@@ -13,9 +13,17 @@ export const patrocinarIngrediente = async (req, res) => {
 
     const session = getSession();
     try {
-        // Limpiamos y normalizamos el nombre del ingrediente (Ej: "mayonesa hellmanns" -> "Mayonesa hellmanns")
         const trimmed = ingrediente.trim();
-        const normalizedIngrediente = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+        const clientName = cliente.nombre.trim();
+        
+        // Si el ingrediente no incluye el nombre del socio/marca, se lo agregamos automáticamente
+        let finalName = trimmed;
+        if (!trimmed.toLowerCase().includes(clientName.toLowerCase())) {
+            finalName = `${trimmed} ${clientName}`;
+        }
+
+        // Capitalizamos la primera letra
+        const normalizedIngrediente = finalName.charAt(0).toUpperCase() + finalName.slice(1);
 
         // Usamos MERGE para crearlo automáticamente en el grafo si es un nuevo ingrediente corporativo
         const query = `
@@ -27,7 +35,7 @@ export const patrocinarIngrediente = async (req, res) => {
         const result = await session.run(query, { normalizedIngrediente, pesoAñadido: parseFloat(pesoAñadido) });
         
         res.status(200).json({
-            message: 'Bidding aplicado exitosamente. El algoritmo priorizará este ingrediente.',
+            message: `Bidding aplicado exitosamente para ${normalizedIngrediente}. El algoritmo priorizará este ingrediente de tu marca.`,
             cliente: cliente.nombre,
             ingrediente: result.records[0].get('Ingrediente'),
             nuevoPeso: result.records[0].get('PesoActual')
