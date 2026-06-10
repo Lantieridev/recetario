@@ -16,15 +16,21 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
   const [analyticsError, setAnalyticsError] = useState(null);
 
   const COMPANIES = {
-    'HELLMANNS-1234': { nombre: 'Hellmann\'s', tier: 'BRAND', desc: 'Marca de consumo masivo. Acceso a subastas de ingredientes (Graph Bidding).' },
-    'CARREFOUR-5678': { nombre: 'Carrefour', tier: 'RETAIL', desc: 'Cadena de supermercados. Acceso a Liquidación de Stock (Stock Clearance).' },
-    'NESTLE-9999': { nombre: 'Nestlé', tier: 'ENTERPRISE', desc: 'Socio global de alimentación. Acceso a Analytics Predictivo DaaS.' }
+    'HELLMANNS-1234': { nombre: 'Hellmann\'s', tier: 'BRAND', desc: 'Marca proveedora de alimentos. Acceso a subastas de ingredientes (Graph Bidding).' },
+    'CARREFOUR-5678': { nombre: 'Carrefour', tier: 'RETAIL', desc: 'Comercio minorista / distribuidor de alimentos. Acceso a Liquidación de Stock (Stock Clearance).' },
+    'NESTLE-9999': { nombre: 'Nestlé', tier: 'ENTERPRISE', desc: 'Socio global de alimentación. Acceso a Analytics Predictivo.' }
+  };
+
+  const TIER_DESCRIPTIONS = {
+    'BRAND': 'Marca proveedora de alimentos. Acceso a subastas de ingredientes (Graph Bidding).',
+    'RETAIL': 'Comercio minorista / distribuidor de alimentos. Acceso a Liquidación de Stock (Stock Clearance).',
+    'ENTERPRISE': 'Socio global de alimentación. Acceso a Analytics Predictivo.'
   };
 
   const activeCompany = COMPANIES[selectedApiKey] || {
     nombre: user?.nombre || 'Socio B2B',
     tier: user?.tier || 'BRAND',
-    desc: 'Acceso Corporativo seguro.'
+    desc: TIER_DESCRIPTIONS[user?.tier || 'BRAND'] || 'Acceso Corporativo seguro.'
   };
   const allIngredients = window.api.todosIngredientes();
 
