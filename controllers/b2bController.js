@@ -13,18 +13,18 @@ export const patrocinarIngrediente = async (req, res) => {
 
     const session = getSession();
     try {
-        // En Neo4j, usamos SET para actualizar o crear la propiedad pesoPatrocinio
+        // Limpiamos y normalizamos el nombre del ingrediente (Ej: "mayonesa hellmanns" -> "Mayonesa hellmanns")
+        const trimmed = ingrediente.trim();
+        const normalizedIngrediente = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+
+        // Usamos MERGE para crearlo automáticamente en el grafo si es un nuevo ingrediente corporativo
         const query = `
-            MATCH (i:Ingrediente {nombre: $ingrediente})
+            MERGE (i:Ingrediente {nombre: $normalizedIngrediente})
             SET i.pesoPatrocinio = coalesce(i.pesoPatrocinio, 0) + $pesoAñadido
             RETURN i.nombre AS Ingrediente, i.pesoPatrocinio AS PesoActual
         `;
         
-        const result = await session.run(query, { ingrediente, pesoAñadido: parseFloat(pesoAñadido) });
-        
-        if (result.records.length === 0) {
-            return res.status(404).json({ error: 'Ingrediente no encontrado en el grafo' });
-        }
+        const result = await session.run(query, { normalizedIngrediente, pesoAñadido: parseFloat(pesoAñadido) });
         
         res.status(200).json({
             message: 'Bidding aplicado exitosamente. El algoritmo priorizará este ingrediente.',
