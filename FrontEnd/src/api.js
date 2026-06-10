@@ -146,6 +146,42 @@
     return handleResponse(res);
   };
 
+  api.b2bBidding = async ({ apiKey, ingrediente, pesoAñadido }) => {
+    await delay();
+    const res = await fetch('/api/b2b/bidding', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey
+      },
+      body: JSON.stringify({ ingrediente, pesoAñadido: parseFloat(pesoAñadido) })
+    });
+    return handleResponse(res);
+  };
+
+  api.b2bStockClearance = async ({ apiKey, ingrediente, pesoAñadido }) => {
+    await delay();
+    const res = await fetch('/api/b2b/stock-clearance', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey
+      },
+      body: JSON.stringify({ ingrediente, pesoAñadido: parseFloat(pesoAñadido) })
+    });
+    return handleResponse(res);
+  };
+
+  api.b2bFlavorTrends = async ({ apiKey }) => {
+    await delay();
+    const res = await fetch('/api/b2b/analytics/flavor-trends', {
+      headers: { 
+        'X-API-KEY': apiKey
+      }
+    });
+    return handleResponse(res);
+  };
+
   // Exponer listados síncronos para los componentes React
   api.todosIngredientes = () => [...cachedIngredientes];
   api.categorias = () => [...cachedCategorias];
