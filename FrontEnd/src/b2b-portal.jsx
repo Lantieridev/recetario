@@ -170,21 +170,6 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                   {activeCompany.desc}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--rule-soft)', paddingTop: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                    <span className="text-muted">Estado de Cuenta:</span>
-                    <span style={{ color: 'var(--cat-veg)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cat-veg)', display: 'inline-block' }}></span>
-                      Activa y Verificada
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                    <span className="text-muted">API Key:</span>
-                    <code className="font-mono" style={{ background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--ink-2)' }}>
-                      {selectedApiKey.substring(0, 5)}••••••••
-                    </code>
-                  </div>
-                </div>
               </div>
             </div>
 
