@@ -208,7 +208,7 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 display: flex;
                 align-items: center;
-                justifyContent: center;
+                justify-content: center;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 cursor: pointer;
                 transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -235,7 +235,7 @@ const RecetaDelDiaHero = ({ receta, onOpen, isFav, onFav, user, diaOffset, onPre
                 border: none;
                 display: flex;
                 align-items: center;
-                justifyContent: center;
+                justify-content: center;
                 box-shadow: 0 4px 14px rgba(184, 64, 31, 0.3);
                 cursor: pointer;
                 transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
