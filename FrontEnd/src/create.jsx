@@ -333,7 +333,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     categoria: '',
     dificultad: 'Media',
     tiempo: { hs: '', min: '' },
-    porciones: '1',
+    porciones: '4',
     metodoCoccion: 'Horno',
     imagenUrl: '',
     ingredientes: [],
@@ -732,7 +732,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                       <input
                         className="input focus-ring"
                         list="ing-suggestions"
-                        placeholder="Ej: Harina de trigo"
+                        placeholder=""
                         value={ingDraft.nombre}
                         onChange={(e) => { setIngDraft({ ...ingDraft, nombre: e.target.value }); setIngErrors({ ...ingErrors, nombre: null }); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
@@ -751,7 +751,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         type="number"
                         min="0"
                         step="any"
-                        placeholder="200"
+                        placeholder=""
                         disabled={UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad)}
                         value={ingDraft.cantidadVal}
                         onChange={(e) => { setIngDraft({ ...ingDraft, cantidadVal: e.target.value }); setIngErrors({ ...ingErrors, cantidad: null }); }}
@@ -900,7 +900,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
       {/* ── Sticky footer ── */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'rgba(251,247,239,.94)', backdropFilter: 'blur(12px)',
+        background: 'var(--sticky-footer-bg)', backdropFilter: 'blur(12px)',
         borderTop: '1px solid var(--rule)', padding: '14px 32px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, gap: 16,
       }}>
