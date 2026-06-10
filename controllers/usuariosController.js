@@ -447,10 +447,11 @@ export const obtenerExplicacionRecomendacion = async (req, res) => {
     const { nombre, tituloReceta } = req.params;
     const session = getSession();
     try {
-        const query =             MATCH (yo:Usuario {nombre: })-[:GUARDO_FAV]->(r1:Receta)<-[:GUARDO_FAV]-(otro:Usuario)-[:GUARDO_FAV]->(recomendada:Receta {titulo: })
+        const query = `
+            MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r1:Receta)<-[:GUARDO_FAV]-(otro:Usuario)-[:GUARDO_FAV]->(recomendada:Receta {titulo: $tituloReceta})
             RETURN r1, otro
             LIMIT 1
-        \;
+        `;
         
         const result = await session.run(query, { nombre, tituloReceta });
         
