@@ -191,7 +191,7 @@ const StepEditor = ({ steps, onChange, stepErrors }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>⏱ Duración paso</span>
                   <div style={{ width: 130 }}>
-                    <HoursMinutesInput value={step.timer} onChange={(v) => updateStep(i, 'timer', v)} />
+                    <HoursMinutesInput value={step.timer} onChange={(v) => updateStep(i, 'timer', v)} legend="Opcional" />
                   </div>
                 </div>
                 {i > 0 && (
@@ -250,6 +250,10 @@ const validate = (form) => {
   if (totalMins < 1)
     errors.tiempo = 'Ingresá el tiempo de preparación (mínimo 1 minuto)';
 
+  const porcionesVal = parseInt(form.porciones);
+  if (!form.porciones || isNaN(porcionesVal) || porcionesVal <= 0)
+    errors.porciones = 'Las porciones deben ser un número mayor a 0';
+
   if (form.ingredientes.length === 0)
     errors.ingredientes = 'Agregá al menos un ingrediente';
 
@@ -287,11 +291,14 @@ const ValidationBar = ({ form }) => {
     return !p.texto.trim() || hasTimerError;
   });
   const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0 && !stepErrors.some(Boolean);
+  const porcionesVal = parseInt(form.porciones) || 0;
+  const porcionesOk = porcionesVal > 0;
 
   const checks = [
     { key: 'titulo', ok: form.titulo.trim().length >= 3, label: 'Título' },
     { key: 'categoria', ok: !!form.categoria, label: 'Categoría' },
     { key: 'tiempo', ok: tiempoOk, label: 'Tiempo' },
+    { key: 'porciones', ok: porcionesOk, label: 'Porciones' },
     { key: 'ingredientes', ok: form.ingredientes.length > 0, label: 'Ingredientes' },
     { key: 'pasos', ok: stepsOk, label: stepsOk ? `${stepsTotal} paso${stepsTotal > 1 ? 's' : ''}` : `${stepsFilled}/${stepsTotal} pasos` },
   ];
@@ -326,7 +333,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     categoria: '',
     dificultad: 'Media',
     tiempo: { hs: '', min: '' },
-    porciones: '4',
+    porciones: '1',
     metodoCoccion: 'Horno',
     imagenUrl: '',
     ingredientes: [],
@@ -430,6 +437,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     if (Object.keys(errs).length > 0) {
       // Mensajes específicos
       if (errs.tiempo) { toast('⏱ ' + errs.tiempo); return; }
+      if (errs.porciones) { toast('👥 ' + errs.porciones); return; }
       if (hasStepErrors) {
         const emptyIdxs = (errs.pasos || []).map((e, i) => e ? i + 1 : null).filter(Boolean);
         toast(`Completá el paso ${emptyIdxs.join(', ')}`);
@@ -454,13 +462,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         })
         .join('\n');
 
+      const rawTitulo = form.titulo.trim();
+      const capitalizedTitulo = rawTitulo.charAt(0).toUpperCase() + rawTitulo.slice(1);
+
       const payload = {
-        titulo: form.titulo.trim(),
+        titulo: capitalizedTitulo,
         descripcion: form.descripcion.trim(),
         categoria: form.categoria,
         dificultad: form.dificultad,
         tiempo: tiempoStr,
-        porciones: parseInt(form.porciones) || 4,
+        porciones: parseInt(form.porciones) || 1,
         creador: user.nombre,
         pasos: pasosStr,
         imagen: form.imagenUrl || null
@@ -469,14 +480,14 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
       await window.api.crearReceta(payload);
 
       for (const ing of form.ingredientes) {
-        await window.api.agregarIngrediente(form.titulo.trim(), {
+        await window.api.agregarIngrediente(capitalizedTitulo, {
           nombreIngrediente: ing.nombre,
           cantidad: ing.cantidadDisplay || ing.cantidad,
         });
       }
 
       toast('¡Receta publicada!');
-      setTimeout(() => onCreated(form.titulo.trim()), 1100);
+      setTimeout(() => onCreated(capitalizedTitulo), 1100);
     } catch (err) {
       setError(err.error || 'No pudimos guardar la receta');
     } finally {
@@ -645,25 +656,33 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                   {/* Tiempo */}
                   <div className="field">
                     <label className="field-label">Tiempo total *</label>
-                    <div style={{ width: 140 }}>
+                    <div style={{ width: 160 }}>
                       <HoursMinutesInput
                         value={form.tiempo}
                         onChange={(v) => setForm({ ...form, tiempo: v })}
+                        legend="Requerido (mínimo 1 min)"
                       />
                     </div>
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
                   </div>
                   {/* Porciones */}
                   <div className="field">
-                    <label className="field-label">Porciones</label>
+                    <label className="field-label">Porciones *</label>
                     <input
                       type="number"
                       min="1"
                       className="input focus-ring"
-                      placeholder="4"
+                      placeholder="1"
                       value={form.porciones}
                       onChange={(e) => setForm({ ...form, porciones: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      style={{ borderColor: allErrors.porciones ? 'var(--accent)' : undefined }}
                     />
+                    {allErrors.porciones && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.porciones}</span>}
                   </div>
                   {/* Método */}
                   <div className="field">
@@ -736,6 +755,11 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         disabled={UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad)}
                         value={ingDraft.cantidadVal}
                         onChange={(e) => { setIngDraft({ ...ingDraft, cantidadVal: e.target.value }); setIngErrors({ ...ingErrors, cantidad: null }); }}
+                        onKeyDown={(e) => {
+                          if (['e', 'E', '+', '-'].includes(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         className="input focus-ring"
                         style={{ minWidth: 90, borderColor: ingErrors.cantidad ? 'var(--accent)' : undefined, opacity: UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad) ? 0.4 : 1 }}
                       />

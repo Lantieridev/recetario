@@ -283,6 +283,12 @@
     return handleResponse(res);
   };
 
+  api.obtenerEstadisticasPublicas = async () => {
+    await delay();
+    const res = await fetch('/api/recetas/estadisticas-publicas');
+    return handleResponse(res);
+  };
+
   // Exponer listados síncronos para los componentes React
   api.todosIngredientes = () => [...cachedIngredientes];
   api.categorias = () => [...cachedCategorias];
