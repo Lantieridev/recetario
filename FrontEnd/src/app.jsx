@@ -352,7 +352,7 @@ const App = () => {
           onChange={v => setTweak('theme', v)}
         />
         <TweakSection label="B2B Monetización" />
-        <TweakButton label="Abrir Portal B2B" onClick={() => navigate({ name: 'b2b' })} />
+        <TweakButton label="Abrir Portal B2B" onClick={() => { navigate({ name: 'b2b' }); window.postMessage({ type: '__deactivate_edit_mode' }, '*'); }} />
         <TweakSection label="Datos" />
         <TweakButton label="Reiniciar al seed original" onClick={() => window.__resetSeed?.()} />
       </TweaksPanel>

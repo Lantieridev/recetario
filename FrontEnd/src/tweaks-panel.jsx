@@ -154,6 +154,15 @@ const __TWEAKS_STYLE = `
   .twk-chip>span>i:first-child{box-shadow:none}
   .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+  .twk-gear-btn{position:fixed;right:20px;bottom:20px;z-index:2147483646;width:48px;height:48px;
+    border-radius:50%;background:rgba(28,24,20,.85);color:#fff;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.15);cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .3s}
+  .twk-gear-btn:hover{transform:scale(1.1);background-color:var(--accent,#B8401F)}
+  .twk-gear-btn svg{width:22px;height:22px;transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+  .twk-gear-btn:hover svg{transform:rotate(90deg)}
 `;
 
 // ── useTweaks ───────────────────────────────────────────────────────────────
@@ -184,7 +193,7 @@ function useTweaks(defaults) {
 // flips off in lockstep; the host echoes __deactivate_edit_mode back which
 // is what actually hides the panel.
 function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
   const dragRef = React.useRef(null);
   // Auto-inject a rail toggle when a <deck-stage> is on the page. The
   // toggle drives the deck's per-viewer _railVisible via window message;
@@ -290,30 +299,13 @@ function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        style={{
-          position: 'fixed',
-          right: 16,
-          bottom: 16,
-          zIndex: 2147483646,
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          background: 'var(--ink)',
-          color: 'var(--paper)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 18,
-          transition: 'transform 0.2s',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        className="twk-gear-btn"
         title="Abrir ajustes (Tweaks)"
       >
-        ⚙️
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
       </button>
     );
   }
