@@ -2,15 +2,8 @@
 // B2B Portal — Brand & Retailer Dashboard (Fase 2B Premium UI)
 const { useState, useEffect } = React;
 
-const B2BPortalScreen = ({ onNavigateToSearch }) => {
-  const LS_B2B_KEY = 'recetario:b2b:apiKey';
-  const [selectedApiKey, setSelectedApiKey] = useState(() => {
-    try {
-      return localStorage.getItem(LS_B2B_KEY) || 'HELLMANNS-1234';
-    } catch (e) {
-      return 'HELLMANNS-1234';
-    }
-  });
+const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
+  const selectedApiKey = user?.apiKey || 'HELLMANNS-1234';
   const [ingrediente, setIngrediente] = useState('');
   const [peso, setPeso] = useState('10.0');
   const [loading, setLoading] = useState(false);
@@ -28,14 +21,15 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
     'NESTLE-9999': { nombre: 'Nestlé', tier: 'ENTERPRISE', desc: 'Socio global de alimentación. Acceso a Analytics Predictivo DaaS.' }
   };
 
-  const activeCompany = COMPANIES[selectedApiKey];
+  const activeCompany = COMPANIES[selectedApiKey] || {
+    nombre: user?.nombre || 'Socio B2B',
+    tier: user?.tier || 'BRAND',
+    desc: 'Acceso Corporativo seguro.'
+  };
   const allIngredients = window.api.todosIngredientes();
 
-  // Reset response when switching company
+  // Reset response when switching user/apiKey
   useEffect(() => {
-    try {
-      localStorage.setItem(LS_B2B_KEY, selectedApiKey);
-    } catch (e) {}
     setResponseMsg(null);
     setErrorMsg(null);
     setTrends([]);
@@ -48,12 +42,13 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
     }
   }, [allIngredients]);
 
-  const handleBidding = async (e, type = 'bidding') => {
+  const handleBidding = async (e) => {
     e.preventDefault();
     setLoading(true);
     setResponseMsg(null);
     setErrorMsg(null);
 
+    const type = activeCompany.tier === 'RETAIL' ? 'clearance' : 'bidding';
     try {
       let res;
       if (type === 'clearance') {
@@ -120,13 +115,13 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
             Optimización algorítmica <br/>y <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>subastas del grafo</em>
           </h1>
           <p className="text-muted" style={{ fontSize: 17, margin: 0, maxWidth: 620 }}>
-            Simulá el rol de un partner comercial de Recetario. Configurá pesos publicitarios y
-            consultá analíticas avanzadas directamente de Neo4j.
+            Panel exclusivo para partners comerciales. Configuración de pesos publicitarios de ingredientes
+            y analíticas predictivas de tendencias en tiempo real.
           </p>
         </div>
       </section>
 
-      {/* Select Company */}
+      {/* Main Content */}
       <section className="container" style={{ padding: '32px 32px 48px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: 48, alignItems: 'start' }}>
           
@@ -134,38 +129,62 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div style={{ background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
               <h3 className="font-mono" style={{ fontSize: 11, color: 'var(--ink-3)', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Seleccionar Partner
+                Partner Autenticado
               </h3>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {Object.keys(COMPANIES).map(key => {
-                  const active = selectedApiKey === key;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedApiKey(key)}
-                      style={{
-                        padding: 16,
-                        borderRadius: 'var(--radius)',
-                        border: `1.5px solid ${active ? 'var(--accent)' : 'var(--rule)'}`,
-                        background: active ? 'var(--paper-2)' : 'transparent',
-                        textAlign: 'left',
-                        transition: 'all 0.2s',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <strong style={{ fontSize: 16, color: 'var(--ink)' }}>{COMPANIES[key].nombre}</strong>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--cream)', padding: '2px 6px', borderRadius: 4 }}>
-                          {COMPANIES[key].tier}
-                        </span>
-                      </div>
-                      <div className="text-muted" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                        API Key: <code className="font-mono" style={{ background: 'var(--cream)', padding: '1px 4px', borderRadius: 2 }}>{key}</code>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div style={{
+                padding: '24px 20px',
+                borderRadius: 'var(--radius)',
+                border: '1.5px solid var(--accent)',
+                background: 'var(--paper-2)',
+                textAlign: 'left',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                {/* Decorative background initial */}
+                <div style={{
+                  position: 'absolute', right: -5, bottom: -15, fontSize: 90, fontWeight: 800,
+                  color: 'color-mix(in oklab, var(--accent) 5%, transparent)', pointerEvents: 'none', userSelect: 'none',
+                  lineHeight: 0.8
+                }}>
+                  {activeCompany.nombre[0]}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <strong style={{ fontSize: 20, color: 'var(--ink)', fontWeight: 600 }}>{activeCompany.nombre}</strong>
+                  <span style={{ 
+                    fontSize: 10, 
+                    fontWeight: 700, 
+                    color: 'var(--paper)', 
+                    background: 'var(--accent)', 
+                    padding: '2px 8px', 
+                    borderRadius: 999,
+                    letterSpacing: '0.05em'
+                  }}>
+                    {activeCompany.tier}
+                  </span>
+                </div>
+                
+                <div style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 20, lineHeight: 1.45, position: 'relative', zIndex: 1 }}>
+                  {activeCompany.desc}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--rule-soft)', paddingTop: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                    <span className="text-muted">Estado de Conexión:</span>
+                    <span style={{ color: 'var(--cat-veg)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cat-veg)', display: 'inline-block' }}></span>
+                      Conexión Segura SSL
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                    <span className="text-muted">API Key:</span>
+                    <code className="font-mono" style={{ background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--ink)' }}>
+                      {selectedApiKey}
+                    </code>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -173,10 +192,11 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
             <div style={{ background: 'rgba(184, 64, 31, 0.04)', border: '1px solid rgba(184, 64, 31, 0.15)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
               <h4 className="font-display" style={{ fontSize: 18, margin: '0 0 10px', color: 'var(--accent)' }}>¿Cómo verificar el impacto?</h4>
               <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 16px' }}>
-                1. Elegí un ingrediente como <strong>Mayonesa</strong> o <strong>Pollo</strong>.<br/>
-                2. Sponsorealo agregando un peso (ej. <strong>20.0</strong>).<br/>
+                1. Seleccioná un ingrediente a promocionar (ej. <strong>cebolla</strong>).<br/>
+                2. Subí una oferta de puja publicitaria (ej. peso <strong>30.0</strong>).<br/>
                 3. Hacé clic en "Enviar Oferta B2B".<br/>
-                4. Entrá al Buscador Inteligente, ingresá el ingrediente en "Tengo" y realizá la búsqueda. Verás cómo las recetas que lo contienen suben en prioridad y llevan la etiqueta <strong>★ Patrocinado</strong>.
+                4. Dirigite a la pestaña <strong>Buscar</strong> en el menú superior.<br/>
+                5. Ingresá el ingrediente en el buscador "Tengo" y realizá la búsqueda. Verás cómo las recetas patrocinadas suben en prioridad con la etiqueta <strong>★ Patrocinado</strong>.
               </p>
               <button 
                 onClick={onNavigateToSearch} 
@@ -200,8 +220,8 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
                 {activeCompany.nombre[0]}
               </div>
               <div>
-                <h2 className="font-display" style={{ fontSize: 24, margin: 0 }}>{activeCompany.nombre}</h2>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>{activeCompany.desc}</div>
+                <h2 className="font-display" style={{ fontSize: 24, margin: 0 }}>Consola {activeCompany.nombre}</h2>
+                <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>Credencial corporativa verificada y activa.</div>
               </div>
             </div>
 
@@ -297,7 +317,7 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
             {activeCompany.tier === 'ENTERPRISE' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: 0 }}>
-                  Como suscriptor Enterprise (Nestlé), tenés acceso al servicio <strong>Predictive Flavor Analytics (DaaS)</strong>. 
+                  Como suscriptor Enterprise ({activeCompany.nombre}), tenés acceso al servicio <strong>Predictive Flavor Analytics (DaaS)</strong>. 
                   Esta consola consulta en tiempo real relaciones de co-ocurrencia en el grafo (ingredientes comunes que comparten recetas) 
                   para predecir combinaciones ideales de sabor para nuevos productos.
                 </p>
@@ -314,8 +334,8 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
                 {analyticsError && (
                   <div style={{
                     padding: 16,
-                    background: 'rgba(184,64,31,.08)',
-                    border: '1px solid rgba(184,64,31,.2)',
+                    background: 'rgba(184, 64, 31, 0.08)',
+                    border: '1px solid rgba(184, 64, 31, 0.2)',
                     borderRadius: 'var(--radius)',
                     color: 'var(--accent)',
                     fontSize: 14
@@ -394,6 +414,6 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
       </section>
     </div>
   );
-};
+}
 
 Object.assign(window, { B2BPortalScreen });
