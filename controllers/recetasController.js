@@ -592,7 +592,7 @@ export const enlazarAlergeno = async (req, res) => {
         const query = `
             MATCH (i:Ingrediente {nombre: $ingrediente})
             MERGE (a:Alergeno {nombre: $alergeno})
-            MERGE (i)-[:PERTENECE_A_FAMILIA]->(a)
+            MERGE (i)-[:TIENE_ALERGENO]->(a)
             RETURN i.nombre AS Ingrediente, a.nombre AS Alergeno
         `;
         
@@ -610,6 +610,36 @@ export const enlazarAlergeno = async (req, res) => {
     } catch (error) {
         console.error('Error al enlazar alérgeno:', error);
         res.status(500).json({ error: error.message });
+    } finally {
+        await session.close();
+    }
+};
+
+// 15. Obtener estadísticas públicas para la pantalla de acceso
+// GET /api/recetas/estadisticas-publicas
+export const obtenerEstadisticasPublicas = async (req, res) => {
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (r:Receta)
+            WITH count(r) AS totalRecetas
+            MATCH (c:Categoria)
+            RETURN totalRecetas, count(c) AS totalCategorias
+        `;
+        const result = await session.run(query);
+        const record = result.records[0];
+        let recetas = 0;
+        let categorias = 0;
+        if (record) {
+            const rVal = record.get('totalRecetas');
+            const cVal = record.get('totalCategorias');
+            recetas = neo4j.isInt(rVal) ? rVal.toNumber() : Number(rVal);
+            categorias = neo4j.isInt(cVal) ? cVal.toNumber() : Number(cVal);
+        }
+        res.status(200).json({ recetas, categorias });
+    } catch (error) {
+        console.error('Error al obtener estadisticas publicas:', error);
+        res.status(500).json({ error: 'Error interno', detalle: error.message });
     } finally {
         await session.close();
     }

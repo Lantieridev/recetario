@@ -10,6 +10,17 @@ const AuthScreen = ({ onAuth }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+  const [stats, setStats] = useState({ recetas: 10, categorias: 5 });
+
+  React.useEffect(() => {
+    window.api.obtenerEstadisticasPublicas()
+      .then(res => {
+        if (res && typeof res.recetas === 'number') {
+          setStats(res);
+        }
+      })
+      .catch(err => console.error('Error al cargar estadisticas:', err));
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -174,9 +185,9 @@ const AuthScreen = ({ onAuth }) => {
           </div>
  
           <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 32, fontSize: 13, color: 'rgba(245,239,228,.5)' }}>
-            <span>10 recetas</span>
+            <span>{stats.recetas} receta{stats.recetas !== 1 ? 's' : ''}</span>
             <span style={{ width: 1, background: 'rgba(245,239,228,.15)' }}/>
-            <span>5 categorías</span>
+            <span>{stats.categorias} categoría{stats.categorias !== 1 ? 's' : ''}</span>
             <span style={{ width: 1, background: 'rgba(245,239,228,.15)' }}/>
             <span>Recomendaciones colaborativas</span>
           </div>
@@ -359,60 +370,6 @@ const AuthScreen = ({ onAuth }) => {
             </div>
           )}
  
-          {/* quick demo logins */}
-          <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--rule)' }}>
-            <div className="eyebrow" style={{ marginBottom: 14 }}>
-              {userType === 'b2b' ? 'Partners B2B de Demostración' : 'Probá con un usuario demo'}
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {userType === 'cocinero' ? (
-                ['Admin', 'Ornella', 'Juan', 'Ana'].map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    className="chip"
-                    onClick={() => quickLogin(n)}
-                    disabled={loading}
-                    style={n === 'Admin' ? { border: '1.5px solid var(--accent)', color: 'var(--accent)' } : undefined}
-                  >
-                    <span style={{
-                      width: 18, height: 18, borderRadius: 999,
-                      background: n === 'Admin' ? 'var(--accent)' : 'var(--ink)', color: 'var(--paper)',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 600,
-                    }}>
-                      {n[0]}
-                    </span>
-                    {n}
-                  </button>
-                ))
-              ) : (
-                [
-                  { name: 'Hellmann\'s (BRAND)', user: 'Hellmanns' },
-                  { name: 'Carrefour (RETAIL)', user: 'Carrefour' },
-                  { name: 'Nestlé (ENTERPRISE)', user: 'Nestle' }
-                ].map(c => (
-                  <button
-                    key={c.user}
-                    type="button"
-                    className="chip"
-                    onClick={() => quickB2BLogin(c.user)}
-                    disabled={loading}
-                  >
-                    <span style={{
-                      width: 18, height: 18, borderRadius: 999,
-                      background: 'var(--accent)', color: 'var(--paper)',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 600,
-                    }}>
-                      ★
-                    </span>
-                    {c.name}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
         </div>
       </div>
  
