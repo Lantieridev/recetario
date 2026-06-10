@@ -78,3 +78,41 @@ MERGE (u)-[:EMPLEADO_DE {activo: false}]->(p)
 * **`POST /users/associate`**: Asocia manualmente a un usuario común a una marca (lo aprueba con `activo: true` inmediatamente).
 * **`POST /users/confirm`**: Aprueba y activa una relación de socio corporativo pendiente (`r.activo = true`).
 * **`POST /users/dissociate`**: Desvincula a un usuario de cualquier socio B2B (elimina la relación `[:EMPLEADO_DE]`).
+
+---
+
+## 5. Sincronización en Tiempo Real del Estado de Sesión (`GET /api/usuarios/:nombre/status`)
+
+Para evitar inconsistencias de seguridad y de interfaz en el cliente React (por ejemplo, que un usuario siga viendo el Portal B2B o el Panel de Administración después de que sus permisos hayan sido revocados en la base de datos):
+* El frontend realiza una llamada al navegar o al cambiar de ruta a este endpoint de sincronización.
+* Si el rol local (almacenado en `localStorage`) difiere del estado actual en Neo4j (`isAdmin`, `isB2B`, o `tier`), el frontend actualiza la sesión de manera transparente e inmediata, y redirige al usuario si sus accesos fueron revocados.
+
+---
+
+## 6. Lógica de Búsqueda Inteligente e Ingredientes de Marca
+
+### A. Concatenación Automática de Marca (Graph Bidding)
+Para evitar que las marcas tengan que ingresar manualmente el nombre de su empresa al promocionar ingredientes en el portal (ej. ingresar `"Mayonesa Hellmanns"` en lugar de simplemente `"Mayonesa"`), el backend implementa una lógica de auto-concatenación:
+* Si el ingrediente ingresado por el socio no contiene el nombre de su empresa (sin distinguir mayúsculas ni minúsculas), el servidor lo concatena automáticamente: `Ingrediente + " " + Marca`.
+* Utiliza una sentencia `MERGE` en Neo4j, lo que crea automáticamente el ingrediente en el grafo si es nuevo:
+  ```cypher
+  MERGE (i:Ingrediente {nombre: $normalizedIngrediente})
+  SET i.pesoPatrocinio = coalesce(i.pesoPatrocinio, 0) + $pesoAñadido
+  RETURN i.nombre AS Ingrediente, i.pesoPatrocinio AS PesoActual
+  ```
+
+### B. Coincidencia por Límites de Palabra (Word-Boundary Matching)
+En el buscador inteligente de recetas (`/api/recetas/buscar`), la consulta Cypher utiliza una lógica basada en límites de palabra para emparejar términos genéricos (ej. `"Aceite"`) con ingredientes específicos de marca (ej. `"Aceite Hellmanns"`):
+* La condición en Cypher verifica que el ingrediente de la receta sea idéntico al término buscado, o comience/termine/contenga el término con espacios de separación correspondientes:
+  ```cypher
+  WHERE any(t in $ingredientes_tengo WHERE 
+      toLower(i.nombre) = toLower(t) OR 
+      toLower(i.nombre) STARTS WITH toLower(t) + " " OR 
+      toLower(i.nombre) ENDS WITH " " + toLower(t) OR 
+      toLower(i.nombre) CONTAINS " " + toLower(t) + " " OR
+      toLower(t) STARTS WITH toLower(i.nombre) + " " OR
+      toLower(t) ENDS WITH " " + toLower(i.nombre) OR
+      toLower(t) CONTAINS " " + toLower(i.nombre) + " "
+  )
+  ```
+Esto asegura que las recetas conteniendo productos patrocinados de marca aparezcan correctamente ordenadas por su peso de puja publicitaria, elevándolas en la prioridad del listado de búsqueda del usuario.
