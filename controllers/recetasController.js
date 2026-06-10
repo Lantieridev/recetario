@@ -201,9 +201,25 @@ export const buscarRecetas = async (req, res) => {
                 WHERE a.nombre IN $alergias_usuario
             }
             MATCH (r)-[:CONTIENE]->(i:Ingrediente)
-            WHERE i.nombre IN $ingredientes_tengo
+            WHERE any(t in $ingredientes_tengo WHERE 
+                toLower(i.nombre) = toLower(t) OR 
+                toLower(i.nombre) STARTS WITH toLower(t) + " " OR 
+                toLower(i.nombre) ENDS WITH " " + toLower(t) OR 
+                toLower(i.nombre) CONTAINS " " + toLower(t) + " " OR
+                toLower(t) STARTS WITH toLower(i.nombre) + " " OR
+                toLower(t) ENDS WITH " " + toLower(i.nombre) OR
+                toLower(t) CONTAINS " " + toLower(i.nombre) + " "
+            )
             OPTIONAL MATCH (r)-[:CONTIENE]->(faltante:Ingrediente)
-            WHERE NOT faltante.nombre IN $ingredientes_tengo
+            WHERE NOT any(t in $ingredientes_tengo WHERE 
+                toLower(faltante.nombre) = toLower(t) OR 
+                toLower(faltante.nombre) STARTS WITH toLower(t) + " " OR 
+                toLower(faltante.nombre) ENDS WITH " " + toLower(t) OR 
+                toLower(faltante.nombre) CONTAINS " " + toLower(t) + " " OR
+                toLower(t) STARTS WITH toLower(faltante.nombre) + " " OR
+                toLower(t) ENDS WITH " " + toLower(faltante.nombre) OR
+                toLower(t) CONTAINS " " + toLower(faltante.nombre) + " "
+            )
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             
             CALL {
