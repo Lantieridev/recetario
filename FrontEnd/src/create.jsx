@@ -522,7 +522,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
       </div>
 
       {/* ── Title hero ── */}
-      <div style={{ background: 'linear-gradient(135deg, var(--ink) 0%, #2D2520 100%)', padding: '44px 0 52px', marginBottom: 40 }}>
+      <div style={{ background: 'linear-gradient(135deg, #1C1814 0%, #2D2520 100%)', padding: '44px 0 52px', marginBottom: 40 }}>
         <div className="container" style={{ maxWidth: 780 }}>
           <div style={{ fontSize: 11, letterSpacing: '0.14em', fontWeight: 500, color: 'rgba(244,236,221,.45)', textTransform: 'uppercase', marginBottom: 10 }}>
             Nueva receta
@@ -751,7 +751,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         type="number"
                         min="0"
                         step="any"
-                        placeholder=""
+                        placeholder="0"
                         disabled={UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad)}
                         value={ingDraft.cantidadVal}
                         onChange={(e) => { setIngDraft({ ...ingDraft, cantidadVal: e.target.value }); setIngErrors({ ...ingErrors, cantidad: null }); }}
