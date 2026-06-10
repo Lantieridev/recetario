@@ -174,23 +174,25 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
             </div>
 
             {/* Quick explanation of effect */}
-            <div style={{ background: 'rgba(184, 64, 31, 0.04)', border: '1px solid rgba(184, 64, 31, 0.15)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
-              <h4 className="font-display" style={{ fontSize: 18, margin: '0 0 10px', color: 'var(--accent)' }}>¿Cómo verificar el impacto?</h4>
-              <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 16px' }}>
-                1. Seleccioná un ingrediente a promocionar (ej. <strong>cebolla</strong>).<br/>
-                2. Subí una oferta de puja publicitaria (ej. peso <strong>30.0</strong>).<br/>
-                3. Hacé clic en "Enviar Oferta B2B".<br/>
-                4. Dirigite a la pestaña <strong>Buscar</strong> en el menú superior.<br/>
-                5. Ingresá el ingrediente en el buscador "Tengo" y realizá la búsqueda. Verás cómo las recetas patrocinadas suben en prioridad con la etiqueta <strong>★ Patrocinado</strong>.
-              </p>
-              <button 
-                onClick={onNavigateToSearch} 
-                className="btn btn-sm btn-ghost" 
-                style={{ width: '100%', border: '1px dashed var(--accent)', color: 'var(--accent)' }}
-              >
-                Ir al Buscador Inteligente
-              </button>
-            </div>
+            {(activeCompany.tier === 'BRAND' || activeCompany.tier === 'RETAIL') && (
+              <div style={{ background: 'rgba(184, 64, 31, 0.04)', border: '1px solid rgba(184, 64, 31, 0.15)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
+                <h4 className="font-display" style={{ fontSize: 18, margin: '0 0 10px', color: 'var(--accent)' }}>¿Cómo verificar el impacto?</h4>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+                  1. Seleccioná un ingrediente a promocionar (ej. <strong>cebolla</strong>).<br/>
+                  2. Subí una oferta de puja publicitaria (ej. peso <strong>30.0</strong>).<br/>
+                  3. Hacé clic en "Enviar Oferta B2B".<br/>
+                  4. Dirigite a la pestaña <strong>Buscar</strong> en el menú superior.<br/>
+                  5. Ingresá el ingrediente en el buscador "Tengo" y realizá la búsqueda. Verás cómo las recetas patrocinadas suben en prioridad con la etiqueta <strong>★ Patrocinado</strong>.
+                </p>
+                <button 
+                  onClick={onNavigateToSearch} 
+                  className="btn btn-sm btn-ghost" 
+                  style={{ width: '100%', border: '1px dashed var(--accent)', color: 'var(--accent)' }}
+                >
+                  Ir al Buscador Inteligente
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Form & Analytics Console */}
@@ -313,7 +315,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                   loading={analyticsLoading}
                   style={{ height: 48 }}
                 >
-                  Consultar Tendencias de Co-ocurrencia (Neo4j DaaS)
+                  Consultar Tendencias de Co-ocurrencia
                 </Button>
 
                 {analyticsError && (
@@ -333,7 +335,6 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <h4 className="font-display" style={{ fontSize: 18, margin: 0 }}>Pares de Sabor con Alta Co-ocurrencia</h4>
-                      <span className="text-faint" style={{ fontSize: 11 }}>Neo4j Graph Inference</span>
                     </div>
 
                     <div style={{
