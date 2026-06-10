@@ -367,8 +367,6 @@ const App = () => {
           options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]}
           onChange={v => setTweak('theme', v)}
         />
-        <TweakSection label="Datos" />
-        <TweakButton label="Reiniciar al seed original" onClick={() => window.__resetSeed?.()} />
       </TweaksPanel>
     </ToastProvider>
   );
