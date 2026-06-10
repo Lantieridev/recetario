@@ -328,22 +328,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     if (submitted) setFormErrors(validate(form));
   }, [form, submitted]);
 
-  const normalizeTiempo = () => {
-    const h = parseInt(form.tiempoHoras) || 0;
-    const m = parseInt(form.tiempoMinutos) || 0;
-    if (h === 0 && m === 0) {
-      setForm(prev => ({ ...prev, tiempoHoras: '', tiempoMinutos: '' }));
-      return;
-    }
-    const totalMins = h * 60 + m;
-    const hFinal = Math.floor(totalMins / 60);
-    const mFinal = totalMins % 60;
-    setForm(prev => ({
-      ...prev,
-      tiempoHoras: hFinal > 0 ? String(hFinal) : '',
-      tiempoMinutos: mFinal > 0 ? String(mFinal) : ''
-    }));
-  };
+  // (Tiempo se normaliza/traduce al guardar o mostrar en la UI)
 
   /* ── Ingredient validation ── */
   const validateIng = () => {
@@ -646,7 +631,12 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
                   {/* Tiempo */}
                   <div className="field">
-                    <label className="field-label">Tiempo total *</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label className="field-label" style={{ margin: 0 }}>Tiempo total *</label>
+                      {tiempoLabel && !allErrors.tiempo && (
+                        <span style={{ fontSize: 12, color: '#5a7a40', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>✓ {tiempoLabel}</span>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
                         <input
@@ -657,7 +647,6 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                           style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
                           value={form.tiempoHoras}
                           onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
-                          onBlur={normalizeTiempo}
                         />
                         <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>h</span>
                       </div>
@@ -670,15 +659,11 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                           style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
                           value={form.tiempoMinutos}
                           onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
-                          onBlur={normalizeTiempo}
                         />
                         <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>min</span>
                       </div>
                     </div>
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
-                    {tiempoLabel && !allErrors.tiempo && (
-                      <span style={{ fontSize: 12, color: '#5a7a40', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>✓ {tiempoLabel}</span>
-                    )}
                   </div>
                   {/* Porciones */}
                   <div className="field">
@@ -764,7 +749,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         value={ingDraft.cantidadVal}
                         onChange={(e) => { setIngDraft({ ...ingDraft, cantidadVal: e.target.value }); setIngErrors({ ...ingErrors, cantidad: null }); }}
                         className="input focus-ring"
-                        style={{ borderColor: ingErrors.cantidad ? 'var(--accent)' : undefined, opacity: UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad) ? 0.4 : 1 }}
+                        style={{ minWidth: 90, borderColor: ingErrors.cantidad ? 'var(--accent)' : undefined, opacity: UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad) ? 0.4 : 1 }}
                       />
                       {ingErrors.cantidad && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{ingErrors.cantidad}</span>}
                     </div>
