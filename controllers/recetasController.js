@@ -232,8 +232,11 @@ export const buscarRecetas = async (req, res) => {
                        toLower(patr.nombre) CONTAINS " " + toLower(ing.nombre) + " ")
                   AND coalesce(patr.pesoPatrocinio, 0) > 0
                 WITH ing, patr ORDER BY patr.pesoPatrocinio DESC
-                WITH ing, head(collect(patr)) AS maxPatr
-                RETURN collect(DISTINCT maxPatr.nombre) AS IngredientesPatrocinados, sum(coalesce(maxPatr.pesoPatrocinio, 0)) AS ScorePatrocinio
+                WITH ing, collect(patr) AS matchingPatrs
+                WITH ing, matchingPatrs, (CASE WHEN size(matchingPatrs) > 0 THEN head(matchingPatrs).pesoPatrocinio ELSE null END) AS maxWeight
+                WITH ing, [p in matchingPatrs WHERE p.pesoPatrocinio = maxWeight] AS topPatrs
+                UNWIND (CASE WHEN size(topPatrs) = 0 THEN [null] ELSE topPatrs END) AS p
+                RETURN collect(DISTINCT p.nombre) AS IngredientesPatrocinados, sum(coalesce(p.pesoPatrocinio, 0)) AS ScorePatrocinio
             }
             
             RETURN r.titulo AS Receta,
@@ -305,7 +308,7 @@ export const obtenerReceta = async (req, res) => {
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
             OPTIONAL MATCH (r)-[co:CONTIENE]->(i:Ingrediente)
             
-            // Para cada ingrediente i, encontrar la versión patrocinada con mayor peso
+            // Para cada ingrediente i, encontrar la versión patrocinada con mayor peso (soportando empates)
             CALL {
                 WITH i
                 OPTIONAL MATCH (patr:Ingrediente)
@@ -315,7 +318,10 @@ export const obtenerReceta = async (req, res) => {
                        toLower(patr.nombre) CONTAINS " " + toLower(i.nombre) + " ")
                   AND coalesce(patr.pesoPatrocinio, 0) > 0
                 WITH patr ORDER BY patr.pesoPatrocinio DESC
-                RETURN head(collect(patr.nombre)) AS maxPatrNombre
+                WITH collect(patr) AS matchingPatrs
+                WITH matchingPatrs, (CASE WHEN size(matchingPatrs) > 0 THEN head(matchingPatrs).pesoPatrocinio ELSE null END) AS maxWeight
+                WITH [p in matchingPatrs WHERE p.pesoPatrocinio = maxWeight] AS topPatrs
+                RETURN (CASE WHEN size(topPatrs) > 0 THEN reduce(s = "", p in topPatrs | s + (CASE WHEN s = "" THEN "" ELSE " & " END) + p.nombre) ELSE null END) AS maxPatrNombre
             }
             
             RETURN r.titulo AS titulo,
