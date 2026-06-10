@@ -130,6 +130,22 @@
     return handleResponse(res);
   };
 
+  api.recetaDelDia = async () => {
+    await delay();
+    const res = await fetch('/api/recetas/del-dia');
+    return handleResponse(res);
+  };
+
+  api.registrarHistorial = async (nombre, tituloReceta) => {
+    await delay();
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/historial`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tituloReceta })
+    });
+    return handleResponse(res);
+  };
+
   // Exponer listados síncronos para los componentes React
   api.todosIngredientes = () => [...cachedIngredientes];
   api.categorias = () => [...cachedCategorias];

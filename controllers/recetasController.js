@@ -468,10 +468,11 @@ export const obtenerGrafoReceta = async (req, res) => {
     const { titulo } = req.params;
     const session = getSession();
     try {
-        const query =             MATCH (r:Receta {titulo: })
+        const query = `
+            MATCH (r:Receta {titulo: $titulo})
             OPTIONAL MATCH (r)-[rel:USA_INGREDIENTE]->(i:Ingrediente)
             RETURN r, collect(rel) as relations, collect(i) as ingredientes
-        \;
+        `;
         const result = await session.run(query, { titulo });
         
         if (result.records.length === 0) {
@@ -532,11 +533,12 @@ export const enlazarAlergeno = async (req, res) => {
 
     const session = getSession();
     try {
-        const query =             MATCH (i:Ingrediente {nombre: })
-            MERGE (a:Alergeno {nombre: })
+        const query = `
+            MATCH (i:Ingrediente {nombre: $ingrediente})
+            MERGE (a:Alergeno {nombre: $alergeno})
             MERGE (i)-[:PERTENECE_A_FAMILIA]->(a)
             RETURN i.nombre AS Ingrediente, a.nombre AS Alergeno
-        \;
+        `;
         
         const result = await session.run(query, { ingrediente, alergeno });
         

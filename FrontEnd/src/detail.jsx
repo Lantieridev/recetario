@@ -391,7 +391,6 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                         </div>
                       )}
                     </div>
-                    </div>
                   </li>
                 );
               })}
