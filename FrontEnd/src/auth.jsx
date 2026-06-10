@@ -369,7 +369,96 @@ const AuthScreen = ({ onAuth }) => {
               )}
             </div>
           )}
- 
+
+          {/* Acceso Rápido Demo Section */}
+          <div style={{
+            marginTop: 28,
+            paddingTop: 20,
+            borderTop: '1px solid var(--rule)',
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--ink-3)',
+              marginBottom: 12,
+            }}>
+              Acceso Rápido Demo
+            </div>
+            
+            {userType === 'cocinero' ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => quickLogin('Ornella')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🍳 Ornella
+                </button>
+                <button
+                  type="button"
+                  onClick={() => quickLogin('Juan')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🥗 Juan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => quickLogin('Ana')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🍰 Ana
+                </button>
+                <button
+                  type="button"
+                  onClick={() => quickLogin('Admin')}
+                  className="chip focus-ring"
+                  style={{
+                    background: 'var(--accent-soft)',
+                    color: 'var(--accent)',
+                    borderColor: 'var(--accent-soft)',
+                    padding: '6px 12px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  👑 Admin (Consola)
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => quickB2BLogin('Hellmanns')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🥫 Hellmann's (Brand)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => quickB2BLogin('Carrefour')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🛒 Carrefour (Retail)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => quickB2BLogin('Nestle')}
+                  className="chip focus-ring"
+                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  ☕ Nestle (Enterprise)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
  
