@@ -292,6 +292,13 @@ const App = () => {
         />
       );
       break;
+    case 'b2b':
+      screen = (
+        <B2BPortalScreen
+          onNavigateToSearch={() => navigate({ name: 'search' })}
+        />
+      );
+      break;
     case 'create':
       screen = (
         <CreateRecipeScreen
@@ -344,6 +351,8 @@ const App = () => {
           options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]}
           onChange={v => setTweak('theme', v)}
         />
+        <TweakSection label="B2B Monetización" />
+        <TweakButton label="Abrir Portal B2B" onClick={() => navigate({ name: 'b2b' })} />
         <TweakSection label="Datos" />
         <TweakButton label="Reiniciar al seed original" onClick={() => window.__resetSeed?.()} />
       </TweaksPanel>
