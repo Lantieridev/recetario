@@ -11,4 +11,9 @@ router.post('/stock-clearance', b2bAuth('RETAIL'), patrocinarIngrediente);
 // Aplica nivel ENTERPRISE
 router.get('/analytics/flavor-trends', b2bAuth('ENTERPRISE'), obtenerTendenciasSabor);
 
+// Valida la API Key corporativa y retorna la información del partner
+router.get('/validate', b2bAuth(), (req, res) => {
+    res.status(200).json({ valid: true, client: req.b2bClient });
+});
+
 export default router;
