@@ -503,3 +503,37 @@ export const obtenerExplicacionRecomendacion = async (req, res) => {
         await session.close();
     }
 };
+
+// GET /api/usuarios/:nombre/status
+export const obtenerUsuarioStatus = async (req, res) => {
+    const { nombre } = req.params;
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u:Usuario)
+            WHERE toLower(u.nombre) = toLower($nombre)
+            OPTIONAL MATCH (u)-[r:EMPLEADO_DE]->(p:Partner)
+            RETURN u.nombre AS nombre, u.mail AS mail, u.isAdmin AS isAdmin, 
+                   p.nombre AS partnerNombre, p.tier AS partnerTier, r.activo AS partnerActivo
+        `;
+        const result = await session.run(query, { nombre });
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        const record = result.records[0];
+        const isB2B = !!record.get('partnerNombre') && record.get('partnerActivo') === true;
+        res.status(200).json({
+            nombre: record.get('nombre'),
+            mail: record.get('mail'),
+            isAdmin: !!record.get('isAdmin'),
+            isB2B,
+            tier: isB2B ? record.get('partnerTier') : null,
+            partner: isB2B ? record.get('partnerNombre') : null
+        });
+    } catch (error) {
+        console.error('Error al obtener status de usuario:', error);
+        res.status(500).json({ error: 'Error al verificar status del usuario.' });
+    } finally {
+        await session.close();
+    }
+};

@@ -10,13 +10,15 @@ import {
     dejarDeSeguirUsuario,
     obtenerComunidad,
     registrarHistorial,
-    obtenerExplicacionRecomendacion
+    obtenerExplicacionRecomendacion,
+    obtenerUsuarioStatus
 } from '../controllers/usuariosController.js';
 
 const router = express.Router();
 
 router.post('/login', loginUsuario);
 router.post('/', crearUsuario);
+router.get('/:nombre/status', obtenerUsuarioStatus);
 router.get('/:nombre/comunidad', obtenerComunidad);
 router.get('/:nombre/recomendaciones', obtenerRecomendaciones);
 router.get('/:nombre/recomendaciones/:tituloReceta/explicacion', obtenerExplicacionRecomendacion);
