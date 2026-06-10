@@ -57,13 +57,35 @@ const Logo = ({ size = 28 }) => (
 // ============================================================
 //  Buttons
 // ============================================================
-const Button = ({ variant = 'primary', size, icon, iconRight, children, className = '', ...rest }) => {
+const Button = ({ variant = 'primary', size, icon, iconRight, loading, children, className = '', ...rest }) => {
   const sizeClass = size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '';
   return (
-    <button className={`btn btn-${variant} ${sizeClass} ${className}`} {...rest}>
-      {icon && <Icon name={icon} size={16} />}
+    <button 
+      className={`btn btn-${variant} ${sizeClass} ${className}`} 
+      disabled={loading || rest.disabled}
+      {...rest}
+    >
+      {loading && (
+        <span style={{ 
+          display: 'inline-block', 
+          width: 14, 
+          height: 14, 
+          border: '2px solid currentColor', 
+          borderTopColor: 'transparent', 
+          borderRadius: '50%', 
+          animation: 'btn-spin 0.8s linear infinite', 
+          marginRight: 8,
+          verticalAlign: 'middle'
+        }} />
+      )}
+      {!loading && icon && <Icon name={icon} size={16} />}
       {children}
       {iconRight && <Icon name={iconRight} size={16} />}
+      <style>{`
+        @keyframes btn-spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </button>
   );
 };
