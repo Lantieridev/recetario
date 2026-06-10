@@ -56,15 +56,21 @@ const Toggle = ({ checked, onChange, label }) => (
 
 /* ── Section header ───────────────────────────────────────────── */
 const SectionHeader = ({ number, title, subtitle }) => (
-  <div style={{ display: 'flex', alignItems: 'baseline', gap: 20, marginBottom: 32 }}>
-    <span style={{
-      fontFamily: 'var(--font-display)', fontSize: 64, color: 'var(--rule)',
-      lineHeight: 1, flexShrink: 0, userSelect: 'none', letterSpacing: '-0.03em'
-    }}>{number}</span>
-    <div>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 2 }}>{subtitle}</div>}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
+    {/* Decorative number pill */}
+    <div style={{
+      background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)',
+      color: '#fff', fontFamily: 'var(--font-display)', fontSize: 26,
+      width: 48, height: 48, borderRadius: '50%', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      boxShadow: '0 4px 12px rgba(184,64,31,.3)', letterSpacing: '-0.02em',
+    }}>{number}</div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{title}</div>
+      {subtitle && <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 3 }}>{subtitle}</div>}
     </div>
+    {/* Decorative rule line */}
+    <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, var(--rule) 0%, transparent 100%)', maxWidth: 120 }} />
   </div>
 );
 
@@ -122,21 +128,23 @@ const StepEditor = ({ steps, onChange }) => {
                   <HoursMinutesInput value={step.timer} onChange={(v) => updateStep(i, 'timer', v)} />
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => removeStep(i)}
-                disabled={steps.length <= 1}
-                style={{
-                  fontSize: 12, color: steps.length <= 1 ? 'var(--ink-4)' : 'var(--ink-3)',
-                  background: 'none', border: 'none', cursor: steps.length <= 1 ? 'not-allowed' : 'pointer',
-                  padding: '4px 8px', borderRadius: 6,
-                  transition: 'color .15s',
-                }}
-                onMouseEnter={(e) => { if (steps.length > 1) e.currentTarget.style.color = 'var(--accent)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = steps.length <= 1 ? 'var(--ink-4)' : 'var(--ink-3)'; }}
-              >
-                Quitar paso
-              </button>
+              {/* Only show remove button from step 2 onwards */}
+              {i > 0 && (
+                <button
+                  type="button"
+                  onClick={() => removeStep(i)}
+                  style={{
+                    fontSize: 12, color: 'var(--ink-3)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '4px 8px', borderRadius: 6,
+                    transition: 'color .15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ink-3)'; }}
+                >
+                  Quitar paso
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -303,8 +311,49 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         </div>
       </div>
 
-      {/* ── Form body ── */}
-      <div className="container" style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: 56 }}>
+      {/* ── Form body — decorative recipe card ── */}
+      <div className="container" style={{ maxWidth: 760, paddingBottom: 0 }}>
+        {/* Outer decorative frame */}
+        <div style={{
+          position: 'relative',
+          background: 'var(--paper)',
+          border: '1px solid var(--rule)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: '0 8px 40px -8px rgba(28,24,20,.12), 0 2px 8px -2px rgba(28,24,20,.06)',
+          overflow: 'hidden',
+        }}>
+          {/* Left accent stripe */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, bottom: 0, width: 5,
+            background: 'linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent) 100%)',
+          }} />
+
+          {/* Inner double-border inset */}
+          <div style={{
+            margin: '20px 20px 20px 28px',
+            border: '1px solid var(--rule-soft)',
+            borderRadius: 'calc(var(--radius-xl) - 8px)',
+            padding: '40px 44px',
+            position: 'relative',
+          }}>
+            {/* Corner ornaments */}
+            {[
+              { top: 8, left: 8 },
+              { top: 8, right: 8 },
+              { bottom: 8, left: 8 },
+              { bottom: 8, right: 8 },
+            ].map((pos, k) => (
+              <div key={k} style={{
+                position: 'absolute', width: 16, height: 16, ...pos,
+                borderTop: pos.top !== undefined ? '2px solid var(--accent-soft)' : 'none',
+                borderBottom: pos.bottom !== undefined ? '2px solid var(--accent-soft)' : 'none',
+                borderLeft: pos.left !== undefined ? '2px solid var(--accent-soft)' : 'none',
+                borderRight: pos.right !== undefined ? '2px solid var(--accent-soft)' : 'none',
+              }} />
+            ))}
+
+            {/* Actual form content */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 52 }}>
 
         {/* 1. Identidad */}
         <section>
@@ -542,7 +591,10 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
             <span style={{ fontSize: 16 }}>⚠</span> {error}
           </div>
         )}
-      </div>
+      </div>{/* /.form content flex */}
+      </div>{/* /.inner double-border */}
+      </div>{/* /.outer card */}
+      </div>{/* /.container */}
 
       {/* ── Sticky footer ── */}
       <div style={{
