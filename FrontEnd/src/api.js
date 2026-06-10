@@ -152,6 +152,7 @@
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'X-USER-EMAIL': apiKey,
         'X-API-KEY': apiKey
       },
       body: JSON.stringify({ ingrediente, pesoAñadido: parseFloat(pesoAñadido) })
@@ -165,6 +166,7 @@
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'X-USER-EMAIL': apiKey,
         'X-API-KEY': apiKey
       },
       body: JSON.stringify({ ingrediente, pesoAñadido: parseFloat(pesoAñadido) })
@@ -176,6 +178,7 @@
     await delay();
     const res = await fetch('/api/b2b/analytics/flavor-trends', {
       headers: { 
+        'X-USER-EMAIL': apiKey,
         'X-API-KEY': apiKey
       }
     });
@@ -185,7 +188,81 @@
   api.validarApiKey = async (apiKey) => {
     await delay();
     const res = await fetch('/api/b2b/validate', {
-      headers: { 'X-API-KEY': apiKey }
+      headers: { 
+        'X-USER-EMAIL': apiKey,
+        'X-API-KEY': apiKey
+      }
+    });
+    return handleResponse(res);
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  //  ADMIN ENDPOINTS
+  // ─────────────────────────────────────────────────────────────
+  const getAdminHeaders = (adminName = 'Admin') => ({
+    'Content-Type': 'application/json',
+    'X-USER-NAME': adminName
+  });
+
+  api.adminGetStats = async (adminName) => {
+    await delay();
+    const res = await fetch('/api/admin/stats', {
+      headers: getAdminHeaders(adminName)
+    });
+    return handleResponse(res);
+  };
+
+  api.adminGetPartners = async (adminName) => {
+    await delay();
+    const res = await fetch('/api/admin/partners', {
+      headers: getAdminHeaders(adminName)
+    });
+    return handleResponse(res);
+  };
+
+  api.adminCreatePartner = async (adminName, { nombre, tier }) => {
+    await delay();
+    const res = await fetch('/api/admin/partners', {
+      method: 'POST',
+      headers: getAdminHeaders(adminName),
+      body: JSON.stringify({ nombre, tier })
+    });
+    return handleResponse(res);
+  };
+
+  api.adminDeletePartner = async (adminName, nombre) => {
+    await delay();
+    const res = await fetch(`/api/admin/partners/${encodeURIComponent(nombre)}`, {
+      method: 'DELETE',
+      headers: getAdminHeaders(adminName)
+    });
+    return handleResponse(res);
+  };
+
+  api.adminGetUsers = async (adminName) => {
+    await delay();
+    const res = await fetch('/api/admin/users', {
+      headers: getAdminHeaders(adminName)
+    });
+    return handleResponse(res);
+  };
+
+  api.adminAssociateUser = async (adminName, { usuarioNombre, partnerNombre }) => {
+    await delay();
+    const res = await fetch('/api/admin/users/associate', {
+      method: 'POST',
+      headers: getAdminHeaders(adminName),
+      body: JSON.stringify({ usuarioNombre, partnerNombre })
+    });
+    return handleResponse(res);
+  };
+
+  api.adminDissociateUser = async (adminName, usuarioNombre) => {
+    await delay();
+    const res = await fetch('/api/admin/users/dissociate', {
+      method: 'POST',
+      headers: getAdminHeaders(adminName),
+      body: JSON.stringify({ usuarioNombre })
     });
     return handleResponse(res);
   };

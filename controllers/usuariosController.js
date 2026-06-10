@@ -231,7 +231,7 @@ export const loginUsuario = async (req, res) => {
     try {
         const query = `
             MATCH (u:Usuario {nombre: $nombre})
-            RETURN u.nombre AS nombre, u.mail AS mail, u.contrasena AS contrasena
+            RETURN u.nombre AS nombre, u.mail AS mail, u.contrasena AS contrasena, u.isAdmin AS isAdmin
         `;
 
         const result = await session.run(query, { nombre });
@@ -251,7 +251,8 @@ export const loginUsuario = async (req, res) => {
             message: 'Inicio de sesión exitoso',
             usuario: {
                 nombre: record.get('nombre'),
-                mail: record.get('mail')
+                mail: record.get('mail'),
+                isAdmin: !!record.get('isAdmin')
             }
         });
     } catch (error) {
