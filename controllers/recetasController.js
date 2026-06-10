@@ -231,7 +231,9 @@ export const buscarRecetas = async (req, res) => {
                        toLower(patr.nombre) ENDS WITH " " + toLower(ing.nombre) OR 
                        toLower(patr.nombre) CONTAINS " " + toLower(ing.nombre) + " ")
                   AND coalesce(patr.pesoPatrocinio, 0) > 0
-                RETURN collect(DISTINCT patr.nombre) AS IngredientesPatrocinados, sum(coalesce(patr.pesoPatrocinio, 0)) AS ScorePatrocinio
+                WITH ing, patr ORDER BY patr.pesoPatrocinio DESC
+                WITH ing, head(collect(patr)) AS maxPatr
+                RETURN collect(DISTINCT maxPatr.nombre) AS IngredientesPatrocinados, sum(coalesce(maxPatr.pesoPatrocinio, 0)) AS ScorePatrocinio
             }
             
             RETURN r.titulo AS Receta,
@@ -302,6 +304,20 @@ export const obtenerReceta = async (req, res) => {
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
             OPTIONAL MATCH (r)-[co:CONTIENE]->(i:Ingrediente)
+            
+            // Para cada ingrediente i, encontrar la versión patrocinada con mayor peso
+            CALL {
+                WITH i
+                OPTIONAL MATCH (patr:Ingrediente)
+                WHERE (patr = i OR 
+                       toLower(patr.nombre) STARTS WITH toLower(i.nombre) + " " OR 
+                       toLower(patr.nombre) ENDS WITH " " + toLower(i.nombre) OR 
+                       toLower(patr.nombre) CONTAINS " " + toLower(i.nombre) + " ")
+                  AND coalesce(patr.pesoPatrocinio, 0) > 0
+                WITH patr ORDER BY patr.pesoPatrocinio DESC
+                RETURN head(collect(patr.nombre)) AS maxPatrNombre
+            }
+            
             RETURN r.titulo AS titulo,
                    r.descripcion AS descripcion,
                    r.dificultad AS dificultad,
@@ -311,7 +327,7 @@ export const obtenerReceta = async (req, res) => {
                    r.imagen AS imagen,
                    c.nombre AS categoria,
                    u.nombre AS creador,
-                   collect(DISTINCT { nombre: i.nombre, cantidad: co.cantidad }) AS ingredientes
+                   collect(DISTINCT { nombre: i.nombre, cantidad: co.cantidad, recomendado: maxPatrNombre }) AS ingredientes
         `;
         const result = await session.run(query, { titulo });
         if (result.records.length === 0 || result.records[0].get('titulo') === null) {
@@ -364,7 +380,16 @@ export const obtenerCategorias = async (req, res) => {
 export const obtenerIngredientes = async (req, res) => {
     const session = getSession();
     try {
-        const result = await session.run('MATCH (i:Ingrediente) RETURN DISTINCT i.nombre AS nombre ORDER BY nombre');
+        const query = `
+            MATCH (i:Ingrediente)
+            WHERE NOT EXISTS {
+                MATCH (p:Partner)
+                WHERE toLower(i.nombre) = toLower(p.nombre)
+                   OR toLower(i.nombre) ENDS WITH " " + toLower(p.nombre)
+            }
+            RETURN DISTINCT i.nombre AS nombre ORDER BY nombre
+        `;
+        const result = await session.run(query);
         res.status(200).json({ ingredientes: result.records.map(r => r.get('nombre')) });
     } catch (error) {
         console.error('Error al obtener ingredientes:', error);
