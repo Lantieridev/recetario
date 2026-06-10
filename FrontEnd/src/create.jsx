@@ -99,37 +99,7 @@ const UNIDADES_OPTIONS = [
 /* ── Ingredientes comunes quick-add ─────────────────────────────── */
 const COMUNES = ['Sal', 'Pimienta', 'Aceite', 'Cebolla', 'Ajo', 'Harina', 'Huevo'];
 
-/* ── Ingredient amount input (number + unit select) ────────────── */
-const IngredientAmountInput = ({ cantidadVal, cantidadUnidad, onChangeCantidad, onChangeUnidad, error }) => {
-  const isEspecial = UNIDADES_ESPECIALES.includes(cantidadUnidad);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <label className="field-label">Cantidad</label>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="200"
-          disabled={isEspecial}
-          value={cantidadVal}
-          onChange={(e) => onChangeCantidad(e.target.value)}
-          className="input"
-          style={{ flex: 1, borderColor: error ? 'var(--accent)' : undefined, opacity: isEspecial ? 0.4 : 1 }}
-        />
-        <select
-          value={cantidadUnidad}
-          onChange={(e) => onChangeUnidad(e.target.value)}
-          className="select"
-          style={{ width: 140 }}
-        >
-          {UNIDADES_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-        </select>
-      </div>
-      {error && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{error}</span>}
-    </div>
-  );
-};
+/* ── Ingredient amount input (removed to inline in grid) ────────── */
 
 /* ── formatTiempo (from stage-5, converts val+unit to readable) ── */
 const formatTiempo = (horas, minutos) => {
@@ -684,7 +654,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                           min="0"
                           placeholder="0"
                           className="input focus-ring"
-                          style={{ width: '100%', textAlign: 'center', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                          style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
                           value={form.tiempoHoras}
                           onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
                           onBlur={normalizeTiempo}
@@ -697,7 +667,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                           min="0"
                           placeholder="0"
                           className="input focus-ring"
-                          style={{ width: '100%', textAlign: 'center', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                          style={{ width: '100%', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
                           value={form.tiempoMinutos}
                           onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
                           onBlur={normalizeTiempo}
@@ -763,7 +733,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
                 {/* Add form */}
                 <div style={{ background: 'var(--paper-2)', border: `1.5px solid ${allErrors.ingredientes ? 'rgba(184,64,31,.3)' : 'var(--rule)'}`, borderRadius: 'var(--radius-lg)', padding: '20px 24px', marginBottom: 20 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr auto auto', gap: 12, alignItems: 'end' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr auto auto', gap: 12, alignItems: 'end' }}>
                     {/* Nombre */}
                     <div className="field">
                       <label className="field-label">Ingrediente *</label>
@@ -782,23 +752,45 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                       {ingErrors.nombre && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{ingErrors.nombre}</span>}
                     </div>
 
-                    {/* Cantidad + Unidad */}
-                    <IngredientAmountInput
-                      cantidadVal={ingDraft.cantidadVal}
-                      cantidadUnidad={ingDraft.cantidadUnidad}
-                      onChangeCantidad={(v) => { setIngDraft({ ...ingDraft, cantidadVal: v }); setIngErrors({ ...ingErrors, cantidad: null }); }}
-                      onChangeUnidad={(v) => {
-                        const isOldEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
-                        const isNewEspecial = UNIDADES_ESPECIALES.includes(v);
-                        const shouldClear = isNewEspecial || isOldEspecial;
-                        setIngDraft({
-                          ...ingDraft,
-                          cantidadUnidad: v,
-                          cantidadVal: shouldClear ? '' : ingDraft.cantidadVal
-                        });
-                      }}
-                      error={ingErrors.cantidad}
-                    />
+                    {/* Cantidad */}
+                    <div className="field">
+                      <label className="field-label">Cantidad</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="200"
+                        disabled={UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad)}
+                        value={ingDraft.cantidadVal}
+                        onChange={(e) => { setIngDraft({ ...ingDraft, cantidadVal: e.target.value }); setIngErrors({ ...ingErrors, cantidad: null }); }}
+                        className="input focus-ring"
+                        style={{ borderColor: ingErrors.cantidad ? 'var(--accent)' : undefined, opacity: UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad) ? 0.4 : 1 }}
+                      />
+                      {ingErrors.cantidad && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{ingErrors.cantidad}</span>}
+                    </div>
+
+                    {/* Unidad */}
+                    <div className="field">
+                      <label className="field-label">Unidad</label>
+                      <select
+                        value={ingDraft.cantidadUnidad}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const isOldEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
+                          const isNewEspecial = UNIDADES_ESPECIALES.includes(v);
+                          const shouldClear = isNewEspecial || isOldEspecial;
+                          setIngDraft({
+                            ...ingDraft,
+                            cantidadUnidad: v,
+                            cantidadVal: shouldClear ? '' : ingDraft.cantidadVal
+                          });
+                        }}
+                        className="select"
+                        style={{ width: '100%' }}
+                      >
+                        {UNIDADES_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+                      </select>
+                    </div>
 
                     {/* Opcional */}
                     <div style={{ paddingBottom: 1 }}>
@@ -861,7 +853,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                             </span>
                           )}
                         </span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', background: 'var(--paper-2)', padding: '2px 10px', borderRadius: 999, border: '1px solid var(--rule)' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink)', background: 'var(--paper-2)', padding: '2px 10px', borderRadius: 999, border: '1px solid var(--rule)' }}>
                           {ing.cantidadDisplay || ing.cantidad}
                         </span>
                         <button type="button" onClick={() => removeIngredient(i)}
