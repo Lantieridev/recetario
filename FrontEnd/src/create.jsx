@@ -132,15 +132,16 @@ const IngredientAmountInput = ({ cantidadVal, cantidadUnidad, onChangeCantidad, 
 };
 
 /* ── formatTiempo (from stage-5, converts val+unit to readable) ── */
-const formatTiempo = (val, unidad) => {
-  const n = parseInt(val) || 0;
-  if (n === 0) return null;
-  const totalMins = unidad === 'horas' ? n * 60 : n;
-  if (totalMins < 60) return `${totalMins} min`;
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}min`;
+const formatTiempo = (horas, minutos) => {
+  const h = parseInt(horas) || 0;
+  const m = parseInt(minutos) || 0;
+  const totalMins = h * 60 + m;
+  if (totalMins === 0) return null;
+  const hFinal = Math.floor(totalMins / 60);
+  const mFinal = totalMins % 60;
+  if (hFinal === 0) return `${mFinal} min`;
+  if (mFinal === 0) return `${hFinal}h`;
+  return `${hFinal}h ${mFinal}min`;
 };
 
 /* ── cleanStepText (from stage-5) ──────────────────────────────── */
@@ -269,7 +270,7 @@ const validate = (form) => {
     errors.categoria = 'Elegí una categoría';
 
   // Tiempo mínimo: al menos 1 minuto
-  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
+  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
   if (!tiempoLabel)
     errors.tiempo = 'Ingresá el tiempo de preparación (mínimo 1 minuto)';
 
@@ -288,7 +289,7 @@ const validate = (form) => {
 
 /* ── Validation summary bar ────────────────────────────────────── */
 const ValidationBar = ({ form }) => {
-  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
+  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
   const stepsFilled = form.pasos.filter(p => p.texto.trim()).length;
   const stepsTotal = form.pasos.length;
   const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0;
@@ -330,8 +331,8 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     descripcion: '',
     categoria: '',
     dificultad: 'Media',
-    tiempoVal: '30',
-    tiempoUnidad: 'minutos',
+    tiempoHoras: '',
+    tiempoMinutos: '',
     porciones: '4',
     metodoCoccion: 'Horno',
     imagenUrl: '',
@@ -357,6 +358,23 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     if (submitted) setFormErrors(validate(form));
   }, [form, submitted]);
 
+  const normalizeTiempo = () => {
+    const h = parseInt(form.tiempoHoras) || 0;
+    const m = parseInt(form.tiempoMinutos) || 0;
+    if (h === 0 && m === 0) {
+      setForm(prev => ({ ...prev, tiempoHoras: '', tiempoMinutos: '' }));
+      return;
+    }
+    const totalMins = h * 60 + m;
+    const hFinal = Math.floor(totalMins / 60);
+    const mFinal = totalMins % 60;
+    setForm(prev => ({
+      ...prev,
+      tiempoHoras: hFinal > 0 ? String(hFinal) : '',
+      tiempoMinutos: mFinal > 0 ? String(mFinal) : ''
+    }));
+  };
+
   /* ── Ingredient validation ── */
   const validateIng = () => {
     const errs = {};
@@ -371,12 +389,50 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
   const addIngredient = () => {
     if (!validateIng()) return;
-    if (form.ingredientes.some(i => i.nombre.toLowerCase() === ingDraft.nombre.toLowerCase())) {
-      toast('Ya está en la lista'); return;
+    
+    // Normalize input name against database (suggested)
+    const rawVal = ingDraft.nombre.trim();
+    const lower = rawVal.toLowerCase();
+    let matchedName = rawVal;
+    
+    // Try to find matching ingredient in suggested (database)
+    let dbMatch = suggested.find(i => i.toLowerCase() === lower);
+    if (!dbMatch) {
+      const alternative = lower.endsWith('s') ? lower.slice(0, -1) : lower + 's';
+      dbMatch = suggested.find(i => i.toLowerCase() === alternative);
     }
+    
+    if (dbMatch) {
+      matchedName = dbMatch; // Use existing ingredient name from DB
+    }
+    
+    // Check if it's already in the currently added list using case-insensitive + singular/plural matching
+    const matchInAdded = form.ingredientes.some(i => {
+      const addedLower = i.nombre.toLowerCase();
+      if (addedLower === matchedName.toLowerCase()) return true;
+      const altAdded = addedLower.endsWith('s') ? addedLower.slice(0, -1) : addedLower + 's';
+      return altAdded === matchedName.toLowerCase();
+    });
+    
+    if (matchInAdded) {
+      toast('Ya está en la lista');
+      return;
+    }
+    
     const isEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
     const cantidadDisplay = isEspecial ? ingDraft.cantidadUnidad : `${ingDraft.cantidadVal} ${ingDraft.cantidadUnidad}`;
-    setForm({ ...form, ingredientes: [...form.ingredientes, { ...ingDraft, cantidadDisplay }] });
+    
+    setForm({
+      ...form,
+      ingredientes: [...form.ingredientes, {
+        nombre: matchedName,
+        cantidadVal: ingDraft.cantidadVal,
+        cantidadUnidad: ingDraft.cantidadUnidad,
+        esOpcional: ingDraft.esOpcional,
+        cantidadDisplay
+      }]
+    });
+    
     setIngDraft({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos', esOpcional: false });
     setIngErrors({});
   };
@@ -408,7 +464,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     setSaving(true);
     setError(null);
     try {
-      const tiempoStr = formatTiempo(form.tiempoVal, form.tiempoUnidad) || '30 min';
+      const tiempoStr = formatTiempo(form.tiempoHoras, form.tiempoMinutos) || '30 min';
 
       const pasosStr = form.pasos
         .filter(p => p.texto.trim())
@@ -451,7 +507,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     }
   };
 
-  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
+  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
   const allErrors = submitted ? validate(form) : {};
   const canSubmit = Object.keys(validate(form)).length === 0;
 
@@ -621,25 +677,33 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                   {/* Tiempo */}
                   <div className="field">
                     <label className="field-label">Tiempo total *</label>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <input
-                        type="number"
-                        min="1"
-                        className="input focus-ring"
-                        placeholder="30"
-                        style={{ flex: 1, borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
-                        value={form.tiempoVal}
-                        onChange={(e) => setForm({ ...form, tiempoVal: e.target.value })}
-                      />
-                      <select
-                        className="select"
-                        style={{ width: 110 }}
-                        value={form.tiempoUnidad}
-                        onChange={(e) => setForm({ ...form, tiempoUnidad: e.target.value })}
-                      >
-                        <option value="minutos">minutos</option>
-                        <option value="horas">horas</option>
-                      </select>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          className="input focus-ring"
+                          style={{ width: '100%', textAlign: 'center', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                          value={form.tiempoHoras}
+                          onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
+                          onBlur={normalizeTiempo}
+                        />
+                        <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>h</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          className="input focus-ring"
+                          style={{ width: '100%', textAlign: 'center', borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                          value={form.tiempoMinutos}
+                          onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
+                          onBlur={normalizeTiempo}
+                        />
+                        <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>min</span>
+                      </div>
                     </div>
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
                     {tiempoLabel && !allErrors.tiempo && (
@@ -723,7 +787,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                       cantidadVal={ingDraft.cantidadVal}
                       cantidadUnidad={ingDraft.cantidadUnidad}
                       onChangeCantidad={(v) => { setIngDraft({ ...ingDraft, cantidadVal: v }); setIngErrors({ ...ingErrors, cantidad: null }); }}
-                      onChangeUnidad={(v) => setIngDraft({ ...ingDraft, cantidadUnidad: v, cantidadVal: '' })}
+                      onChangeUnidad={(v) => {
+                        const isOldEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
+                        const isNewEspecial = UNIDADES_ESPECIALES.includes(v);
+                        const shouldClear = isNewEspecial || isOldEspecial;
+                        setIngDraft({
+                          ...ingDraft,
+                          cantidadUnidad: v,
+                          cantidadVal: shouldClear ? '' : ingDraft.cantidadVal
+                        });
+                      }}
                       error={ingErrors.cantidad}
                     />
 
