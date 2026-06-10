@@ -294,6 +294,23 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                       </span>
                       <span style={{ fontSize: 15, textDecoration: checked ? 'line-through' : 'none', color: checked ? 'var(--ink-3)' : 'var(--ink)' }}>
                         {ing.nombre}
+                        {ing.recomendado && (
+                          <span style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: 'var(--accent)',
+                            background: 'rgba(184, 64, 31, 0.08)',
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                            border: '1px solid rgba(184, 64, 31, 0.15)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}>
+                            ★ Recomendado: {ing.recomendado}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', textDecoration: checked ? 'line-through' : 'none' }}>
@@ -303,7 +320,7 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                 );
               })}
             </ul>
-
+ 
             {ingOpcionales.length > 0 && (
               <>
                 <div className="eyebrow" style={{ fontSize: 11, marginTop: 32, marginBottom: 12 }}>Opcionales y aderezos</div>
@@ -322,6 +339,23 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
                           <span style={{ fontSize: 14, textDecoration: checked ? 'line-through' : 'none', color: 'var(--ink-2)' }}>
                             {ing.nombre}
+                            {ing.recomendado && (
+                              <span style={{
+                                marginLeft: 8,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: 'var(--accent)',
+                                background: 'rgba(184, 64, 31, 0.08)',
+                                padding: '2px 8px',
+                                borderRadius: 4,
+                                border: '1px solid rgba(184, 64, 31, 0.15)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3
+                              }}>
+                                ★ Recomendado: {ing.recomendado}
+                              </span>
+                            )}
                           </span>
                         </div>
                         <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', textDecoration: checked ? 'line-through' : 'none' }}>
