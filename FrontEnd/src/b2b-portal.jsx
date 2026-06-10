@@ -3,7 +3,14 @@
 const { useState, useEffect } = React;
 
 const B2BPortalScreen = ({ onNavigateToSearch }) => {
-  const [selectedApiKey, setSelectedApiKey] = useState('HELLMANNS-1234');
+  const LS_B2B_KEY = 'recetario:b2b:apiKey';
+  const [selectedApiKey, setSelectedApiKey] = useState(() => {
+    try {
+      return localStorage.getItem(LS_B2B_KEY) || 'HELLMANNS-1234';
+    } catch (e) {
+      return 'HELLMANNS-1234';
+    }
+  });
   const [ingrediente, setIngrediente] = useState('');
   const [peso, setPeso] = useState('10.0');
   const [loading, setLoading] = useState(false);
@@ -26,6 +33,9 @@ const B2BPortalScreen = ({ onNavigateToSearch }) => {
 
   // Reset response when switching company
   useEffect(() => {
+    try {
+      localStorage.setItem(LS_B2B_KEY, selectedApiKey);
+    } catch (e) {}
     setResponseMsg(null);
     setErrorMsg(null);
     setTrends([]);
