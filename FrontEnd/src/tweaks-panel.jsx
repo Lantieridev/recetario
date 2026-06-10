@@ -184,7 +184,7 @@ function useTweaks(defaults) {
 // flips off in lockstep; the host echoes __deactivate_edit_mode back which
 // is what actually hides the panel.
 function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(true);
   const dragRef = React.useRef(null);
   // Auto-inject a rail toggle when a <deck-stage> is on the page. The
   // toggle drives the deck's per-viewer _railVisible via window message;
@@ -286,7 +286,37 @@ function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
     window.addEventListener('mouseup', up);
   };
 
-  if (!open) return null;
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position: 'fixed',
+          right: 16,
+          bottom: 16,
+          zIndex: 2147483646,
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: 'var(--ink)',
+          color: 'var(--paper)',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 18,
+          transition: 'transform 0.2s',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        title="Abrir ajustes (Tweaks)"
+      >
+        ⚙️
+      </button>
+    );
+  }
   return (
     <>
       <style>{__TWEAKS_STYLE}</style>
