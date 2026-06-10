@@ -240,8 +240,10 @@ const validate = (form) => {
     errors.categoria = 'Elegí una categoría';
 
   // Tiempo mínimo: al menos 1 minuto
-  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
-  if (!tiempoLabel)
+  const h = parseInt(form.tiempo.hs) || 0;
+  const m = parseInt(form.tiempo.min) || 0;
+  const totalMins = h * 60 + m;
+  if (totalMins < 1)
     errors.tiempo = 'Ingresá el tiempo de preparación (mínimo 1 minuto)';
 
   if (form.ingredientes.length === 0)
@@ -259,7 +261,10 @@ const validate = (form) => {
 
 /* ── Validation summary bar ────────────────────────────────────── */
 const ValidationBar = ({ form }) => {
-  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
+  const h = parseInt(form.tiempo.hs) || 0;
+  const m = parseInt(form.tiempo.min) || 0;
+  const totalMins = h * 60 + m;
+  const tiempoOk = totalMins >= 1;
   const stepsFilled = form.pasos.filter(p => p.texto.trim()).length;
   const stepsTotal = form.pasos.length;
   const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0;
@@ -267,7 +272,7 @@ const ValidationBar = ({ form }) => {
   const checks = [
     { key: 'titulo', ok: form.titulo.trim().length >= 3, label: 'Título' },
     { key: 'categoria', ok: !!form.categoria, label: 'Categoría' },
-    { key: 'tiempo', ok: !!tiempoLabel, label: 'Tiempo' },
+    { key: 'tiempo', ok: tiempoOk, label: 'Tiempo' },
     { key: 'ingredientes', ok: form.ingredientes.length > 0, label: 'Ingredientes' },
     { key: 'pasos', ok: stepsOk, label: stepsOk ? `${stepsTotal} paso${stepsTotal > 1 ? 's' : ''}` : `${stepsFilled}/${stepsTotal} pasos` },
   ];
@@ -301,8 +306,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     descripcion: '',
     categoria: '',
     dificultad: 'Media',
-    tiempoHoras: '',
-    tiempoMinutos: '',
+    tiempo: { hs: '', min: '' },
     porciones: '4',
     metodoCoccion: 'Horno',
     imagenUrl: '',
@@ -419,7 +423,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     setSaving(true);
     setError(null);
     try {
-      const tiempoStr = formatTiempo(form.tiempoHoras, form.tiempoMinutos) || '30 min';
+      const tiempoStr = formatTiempo(form.tiempo.hs, form.tiempo.min) || '30 min';
 
       const pasosStr = form.pasos
         .filter(p => p.texto.trim())
@@ -462,7 +466,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     }
   };
 
-  const tiempoLabel = formatTiempo(form.tiempoHoras, form.tiempoMinutos);
+  const tiempoLabel = formatTiempo(form.tiempo.hs, form.tiempo.min);
   const allErrors = submitted ? validate(form) : {};
   const canSubmit = Object.keys(validate(form)).length === 0;
 
@@ -619,37 +623,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
               {/* ── 2. Tiempo y cocción ── */}
               <section>
                 <SectionHeader number="2" title="Tiempo y cocción" subtitle="Cuánto tarda y cómo se cocina" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
-                  {/* Horas */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
+                  {/* Tiempo */}
                   <div className="field">
-                    <label className="field-label">Horas</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      className="input focus-ring"
-                      style={{ borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
-                      value={form.tiempoHoras}
-                      onChange={(e) => setForm({ ...form, tiempoHoras: e.target.value })}
-                    />
-                  </div>
-                  {/* Minutos */}
-                  <div className="field">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="field-label" style={{ margin: 0 }}>Minutos</label>
-                      {tiempoLabel && !allErrors.tiempo && (
-                        <span style={{ fontSize: 12, color: '#5a7a40', fontWeight: 500 }}>✓ {tiempoLabel}</span>
-                      )}
+                    <label className="field-label">Tiempo total *</label>
+                    <div style={{ width: 140 }}>
+                      <HoursMinutesInput
+                        value={form.tiempo}
+                        onChange={(v) => setForm({ ...form, tiempo: v })}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      className="input focus-ring"
-                      style={{ borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
-                      value={form.tiempoMinutos}
-                      onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
-                    />
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
                   </div>
                   {/* Porciones */}
