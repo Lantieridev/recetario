@@ -164,6 +164,12 @@ async function runTests() {
             console.log('Status:', res16.status);
             console.log('Respuesta Historial:', JSON.stringify(res16.data));
 
+            // 17. Endpoint: Status de Usuario (GET /api/usuarios/:nombre/status)
+            console.log('\n17. Probando: Status de Usuario...');
+            const res17 = await request('/api/usuarios/Carlos/status');
+            console.log('Status:', res17.status);
+            console.log('Respuesta Status:', JSON.stringify(res17.data));
+
 
             console.log('\n--- PRUEBAS FINALIZADAS ---');
         } catch (error) {

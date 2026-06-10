@@ -136,6 +136,12 @@
     return handleResponse(res);
   };
 
+  api.obtenerUsuarioStatus = async (nombre) => {
+    await delay();
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/status`);
+    return handleResponse(res);
+  };
+
   api.registrarHistorial = async (nombre, tituloReceta) => {
     await delay();
     const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/historial`, {

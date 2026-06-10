@@ -221,6 +221,43 @@ const App = () => {
     }
   }, [user]);
 
+  // Live session synchronization with database
+  useEffect(() => {
+    if (user && user.nombre) {
+      window.api.obtenerUsuarioStatus(user.nombre)
+        .then(res => {
+          if (
+            user.isAdmin !== res.isAdmin ||
+            user.isB2B !== res.isB2B ||
+            user.tier !== res.tier
+          ) {
+            setUser(prev => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                isAdmin: res.isAdmin,
+                isB2B: res.isB2B,
+                tier: res.tier,
+                apiKey: res.isB2B ? res.mail : undefined
+              };
+            });
+            
+            // Si el acceso B2B fue revocado y el usuario estaba en el portal B2B, redirigir
+            if (!res.isB2B && route.name === 'b2b') {
+              setRoute({ name: 'browse' });
+            }
+            // Si el acceso Admin fue revocado y el usuario estaba en el panel admin, redirigir
+            if (!res.isAdmin && route.name === 'admin') {
+              setRoute({ name: 'browse' });
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Error al sincronizar sesión con la base de datos:', err);
+        });
+    }
+  }, [user?.nombre, route.name]);
+
   // Apply tweaks to CSS
   useEffect(() => {
     document.documentElement.dataset.theme = t.theme === 'dark' ? 'dark' : 'light';
