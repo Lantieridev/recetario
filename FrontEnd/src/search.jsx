@@ -3,15 +3,35 @@
 // Uses GET /api/recetas/buscar
 
 const SearchScreen = ({ user, onOpenRecipe }) => {
-  const [tengo, setTengo] = useState([]);
-  const [noQuiero, setNoQuiero] = useState([]);
-  const [input, setInput] = useState('');
+  const [tengo, setTengo] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('search:tengo')) || [];
+    } catch { return []; }
+  });
+  const [noQuiero, setNoQuiero] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('search:noQuiero')) || [];
+    } catch { return []; }
+  });
+  const [input, setInput] = useState(() => {
+    try {
+      return sessionStorage.getItem('search:input') || '';
+    } catch { return ''; }
+  });
   const [active, setActive] = useState('tengo');     // which list the input adds to
-  const [results, setResults] = useState(null);
+  const [results, setResults] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('search:results')) || null;
+    } catch { return null; }
+  });
   const [loading, setLoading] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
   const [tiempos, setTiempos] = useState([]);
-  const [filters, setFilters] = useState({ categoria: '', dificultad: '', tiempoRango: '' });
+  const [filters, setFilters] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('search:filters')) || { categoria: '', dificultad: '', tiempoRango: '' };
+    } catch { return { categoria: '', dificultad: '', tiempoRango: '' }; }
+  });
   const [favs, setFavs] = useState(new Set());
   const toast = useToast();
 
@@ -61,6 +81,26 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
     window.api.obtenerUsuario(user.nombre).then(r => setFavs(new Set(r.usuario.recetasFavoritas)));
   }, [user]);
 
+  useEffect(() => {
+    sessionStorage.setItem('search:tengo', JSON.stringify(tengo));
+  }, [tengo]);
+
+  useEffect(() => {
+    sessionStorage.setItem('search:noQuiero', JSON.stringify(noQuiero));
+  }, [noQuiero]);
+
+  useEffect(() => {
+    sessionStorage.setItem('search:input', input);
+  }, [input]);
+
+  useEffect(() => {
+    sessionStorage.setItem('search:results', JSON.stringify(results));
+  }, [results]);
+
+  useEffect(() => {
+    sessionStorage.setItem('search:filters', JSON.stringify(filters));
+  }, [filters]);
+
   const suggestions = useMemo(() => {
     const q = input.trim().toLowerCase();
     if (!q) return [];
@@ -109,13 +149,61 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
   };
 
   const buscar = async () => {
-    if (tengo.length === 0) {
+    let currentTengo = [...tengo];
+    let currentNoQuiero = [...noQuiero];
+
+    const rawVal = input.trim();
+    if (rawVal) {
+      const lower = rawVal.toLowerCase();
+      let match = allIngs.find(i => i.toLowerCase() === lower);
+      if (!match) {
+        let alternative = null;
+        if (lower.endsWith('s') && lower.length > 3) {
+          alternative = lower.slice(0, -1);
+        } else if (lower.length > 2) {
+          alternative = lower + 's';
+        }
+        if (alternative) {
+          match = allIngs.find(i => i.toLowerCase() === alternative);
+        }
+      }
+      
+      let finalVal = match;
+      if (!finalVal) {
+        if (lower.endsWith('s') && lower.length > 3) {
+          const singular = lower.slice(0, -1);
+          finalVal = singular.charAt(0).toUpperCase() + singular.slice(1);
+        } else {
+          finalVal = lower.charAt(0).toUpperCase() + lower.slice(1);
+        }
+      }
+
+      if (active === 'tengo') {
+        if (!currentTengo.includes(finalVal)) {
+          currentTengo.push(finalVal);
+          setTengo(currentTengo);
+        }
+      } else {
+        if (!currentNoQuiero.includes(finalVal)) {
+          currentNoQuiero.push(finalVal);
+          setNoQuiero(currentNoQuiero);
+        }
+      }
+      setInput('');
+    }
+
+    if (currentTengo.length === 0) {
       toast('Agregá al menos un ingrediente que tengas');
       return;
     }
     setLoading(true);
     try {
-      const res = await window.api.buscarPorIngredientes({ tengo, noQuiero, categoria: filters.categoria, dificultad: filters.dificultad });
+      const res = await window.api.buscarPorIngredientes({ 
+        tengo: currentTengo, 
+        noQuiero: currentNoQuiero, 
+        categoria: filters.categoria, 
+        dificultad: filters.dificultad 
+      });
       // Filtrar por rango de tiempo en el cliente
       const resultados = filters.tiempoRango
         ? { ...res, resultados: res.resultados.filter(r => matchesTiempoRango(r.tiempo, filters.tiempoRango)) }
@@ -130,6 +218,11 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
 
   const clearAll = () => {
     setTengo([]); setNoQuiero([]); setResults(null); setInput(''); setFilters({ categoria: '', dificultad: '', tiempoRango: '' });
+    sessionStorage.removeItem('search:tengo');
+    sessionStorage.removeItem('search:noQuiero');
+    sessionStorage.removeItem('search:input');
+    sessionStorage.removeItem('search:results');
+    sessionStorage.removeItem('search:filters');
   };
 
   const toggleFav = async (titulo) => {
@@ -178,24 +271,6 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
           borderRadius: 'var(--radius-xl)',
           padding: 28,
         }}>
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
-            <select className="select" value={filters.categoria} onChange={(e) => setFilters(f => ({ ...f, categoria: e.target.value }))}>
-              <option value="">Toda categoría</option>
-              {window.api.categorias().map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="select" value={filters.dificultad} onChange={(e) => setFilters(f => ({ ...f, dificultad: e.target.value }))}>
-              <option value="">Toda dificultad</option>
-              <option value="Baja">Baja</option>
-              <option value="Media">Media</option>
-              <option value="Alta">Alta</option>
-            </select>
-            <select className="select" value={filters.tiempoRango} onChange={(e) => setFilters(f => ({ ...f, tiempoRango: e.target.value }))}>
-              <option value="">Cualquier tiempo</option>
-              {TIME_RANGES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
-            </select>
-          </div>
-
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 20, padding: 4, background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 999, width: 'fit-content' }}>
             <TabButton active={active === 'tengo'} onClick={() => setActive('tengo')}>
@@ -265,7 +340,7 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
           </div>
 
           {/* Two lists side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }} className="search-lists">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }} className="search-lists">
             <IngredientList
               title="Tengo"
               accentColor="var(--cat-veg)"
@@ -288,19 +363,73 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
             />
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--rule)' }}>
-            <button
-              className="btn-link"
-              onClick={clearAll}
-              disabled={tengo.length === 0 && noQuiero.length === 0}
-              style={{ fontSize: 13, color: 'var(--ink-3)' }}
-            >
-              Limpiar todo
-            </button>
-            <Button variant="accent" icon="sparkle" onClick={buscar} disabled={loading || tengo.length === 0}>
-              {loading ? 'Buscando…' : `Buscar recetas (${tengo.length})`}
-            </Button>
+          {/* Actions & Filters */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 16,
+            marginTop: 24,
+            paddingTop: 20,
+            borderTop: '1px solid var(--rule)'
+          }}>
+            {/* Filters using CustomDropdown */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <CustomDropdown
+                variant="field"
+                placeholder="Toda categoría"
+                value={filters.categoria}
+                options={[{ value: '', label: 'Toda categoría' }, ...window.api.categorias().map(c => ({ value: c, label: c }))]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, categoria: v }))}
+                width="150px"
+              />
+              <CustomDropdown
+                variant="field"
+                placeholder="Toda dificultad"
+                value={filters.dificultad}
+                options={[
+                  { value: '', label: 'Toda dificultad' },
+                  { value: 'Baja', label: '🟢 Baja' },
+                  { value: 'Media', label: '🟡 Media' },
+                  { value: 'Alta', label: '🔴 Alta' }
+                ]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, dificultad: v }))}
+                width="150px"
+              />
+              <CustomDropdown
+                variant="field"
+                placeholder="Cualquier tiempo"
+                value={filters.tiempoRango}
+                options={[
+                  { value: '', label: 'Cualquier tiempo' },
+                  ...TIME_RANGES.map(r => ({ value: r.key, label: `⏱ ${r.label}` }))
+                ]}
+                optionLabel={(o) => o.label}
+                optionValue={(o) => o.value}
+                onChange={(v) => setFilters(f => ({ ...f, tiempoRango: v }))}
+                width="150px"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
+              <button
+                className="btn-link"
+                onClick={clearAll}
+                disabled={tengo.length === 0 && noQuiero.length === 0 && !input.trim() && !filters.categoria && !filters.dificultad && !filters.tiempoRango}
+                style={{ fontSize: 13, color: 'var(--ink-3)' }}
+              >
+                Limpiar todo
+              </button>
+              <Button variant="accent" icon="sparkle" onClick={buscar} disabled={loading || (tengo.length === 0 && !input.trim())}>
+                {loading ? 'Buscando…' : 'Buscar recetas'}
+              </Button>
+            </div>
           </div>
         </div>
       </section>
