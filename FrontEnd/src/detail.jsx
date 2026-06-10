@@ -175,7 +175,19 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
     );
   }
 
-  const steps = data.pasos.split('\n').map(s => s.trim()).filter(Boolean);
+  const steps = (() => {
+    const byNewline = data.pasos.split('\n').map(s => s.trim()).filter(Boolean);
+    // If there's only one "line" the steps were stored as "1. X 2. Y 3. Z …"
+    if (byNewline.length <= 1) {
+      // Split on patterns like "1. " / "2. " etc. and strip the leading number
+      return data.pasos
+        .split(/\d+\.\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+    // Already multi-line — strip any leading "N. " prefix just in case
+    return byNewline.map(s => s.replace(/^\d+\.\s*/, ''));
+  })();
   
   // Simulando que el último 20% de ingredientes son opcionales para la demo
   const ingPrincipales = data.ingredientes.filter((_, i) => i < data.ingredientes.length * 0.8);
