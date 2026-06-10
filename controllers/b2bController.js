@@ -13,13 +13,39 @@ export const patrocinarIngrediente = async (req, res) => {
 
     const session = getSession();
     try {
-        const trimmed = ingrediente.trim();
+        const lower = ingrediente.trim().toLowerCase();
         const clientName = cliente.nombre.trim();
         
-        // Si el ingrediente no incluye el nombre del socio/marca, se lo agregamos automáticamente
-        let finalName = trimmed;
-        if (!trimmed.toLowerCase().includes(clientName.toLowerCase())) {
-            finalName = `${trimmed} ${clientName}`;
+        // 1. Resolver el nombre base del ingrediente (Ej: "leches" -> "Leches", y buscar si existe "Leche" en el grafo)
+        let baseName = lower.charAt(0).toUpperCase() + lower.slice(1);
+        let alternative = null;
+        if (baseName.endsWith('s') && baseName.length > 3) {
+            alternative = baseName.slice(0, -1); // singular
+        } else if (baseName.length > 2) {
+            alternative = baseName + 's'; // plural
+        }
+
+        let baseNormalized = baseName;
+        // Consultar a Neo4j para ver si existe la versión singular o plural
+        const checkQuery = `
+            MATCH (i:Ingrediente)
+            WHERE i.nombre = $baseName OR ($alternative IS NOT NULL AND i.nombre = $alternative)
+            RETURN i.nombre AS nombre LIMIT 1
+        `;
+        const checkResult = await session.run(checkQuery, { baseName, alternative });
+        if (checkResult.records.length > 0) {
+            baseNormalized = checkResult.records[0].get('nombre');
+        } else {
+            // Si es un ingrediente totalmente nuevo y venía en plural, lo registramos como singular por defecto
+            if (baseName.endsWith('s') && baseName.length > 3) {
+                baseNormalized = baseName.slice(0, -1);
+            }
+        }
+
+        // 2. Anexar automáticamente el nombre del socio si no está presente
+        let finalName = baseNormalized;
+        if (!baseNormalized.toLowerCase().includes(clientName.toLowerCase())) {
+            finalName = `${baseNormalized} ${clientName}`;
         }
 
         // Capitalizamos la primera letra
