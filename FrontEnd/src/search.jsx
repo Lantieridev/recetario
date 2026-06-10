@@ -400,6 +400,24 @@ const SearchResultCard = ({ result, onOpen, isFav, onFav, rank, topMatch }) => {
 
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          {result.scorePublicitario > 0 && (
+            <span style={{ 
+              background: 'rgba(184, 64, 31, 0.08)', 
+              color: 'var(--accent)', 
+              fontSize: 10, 
+              fontWeight: 600, 
+              padding: '2px 8px', 
+              borderRadius: 4, 
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              border: '1px solid rgba(184, 64, 31, 0.15)'
+            }}>
+              ★ Patrocinado
+            </span>
+          )}
           <CategoryBadge name={result.categoria} size="sm" />
           <Tiempo value={result.tiempo} />
           <Dificultad value={result.dificultad} />
