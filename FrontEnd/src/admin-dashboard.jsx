@@ -327,8 +327,8 @@ const AdminDashboardScreen = ({ user }) => {
                     <div key={u.nombre} style={{
                       padding: 18,
                       borderRadius: 'var(--radius)',
-                      border: '1.5px solid var(--rule-soft)',
-                      background: u.partner ? 'var(--paper-2)' : 'transparent',
+                      border: u.partner && !u.partner.activo ? '1.5px solid var(--accent)' : '1.5px solid var(--rule-soft)',
+                      background: u.partner && !u.partner.activo ? 'rgba(184, 64, 31, 0.03)' : (u.partner ? 'var(--paper-2)' : 'transparent'),
                       display: 'flex',
                       flexWrap: 'wrap',
                       alignItems: 'center',
