@@ -225,8 +225,13 @@ export const buscarRecetas = async (req, res) => {
             CALL {
                 WITH r
                 OPTIONAL MATCH (r)-[:CONTIENE]->(ing:Ingrediente)
-                WHERE coalesce(ing.pesoPatrocinio, 0) > 0
-                RETURN collect(DISTINCT ing.nombre) AS IngredientesPatrocinados, sum(coalesce(ing.pesoPatrocinio, 0)) AS ScorePatrocinio
+                OPTIONAL MATCH (patr:Ingrediente)
+                WHERE (patr = ing OR 
+                       toLower(patr.nombre) STARTS WITH toLower(ing.nombre) + " " OR 
+                       toLower(patr.nombre) ENDS WITH " " + toLower(ing.nombre) OR 
+                       toLower(patr.nombre) CONTAINS " " + toLower(ing.nombre) + " ")
+                  AND coalesce(patr.pesoPatrocinio, 0) > 0
+                RETURN collect(DISTINCT patr.nombre) AS IngredientesPatrocinados, sum(coalesce(patr.pesoPatrocinio, 0)) AS ScorePatrocinio
             }
             
             RETURN r.titulo AS Receta,

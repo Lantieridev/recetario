@@ -26,10 +26,10 @@ export const patrocinarIngrediente = async (req, res) => {
         }
 
         let baseNormalized = baseName;
-        // Consultar a Neo4j para ver si existe la versión singular o plural
+        // Consultar a Neo4j para ver si existe la versión singular o plural (de forma insensible a mayúsculas/minúsculas)
         const checkQuery = `
             MATCH (i:Ingrediente)
-            WHERE i.nombre = $baseName OR ($alternative IS NOT NULL AND i.nombre = $alternative)
+            WHERE toLower(i.nombre) = toLower($baseName) OR ($alternative IS NOT NULL AND toLower(i.nombre) = toLower($alternative))
             RETURN i.nombre AS nombre LIMIT 1
         `;
         const checkResult = await session.run(checkQuery, { baseName, alternative });
