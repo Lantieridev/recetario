@@ -371,7 +371,7 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                           </span>
                         </div>
                         <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', textDecoration: checked ? 'line-through' : 'none' }}>
-                          {scaleQty(ing.cantidad, servings)}
+                          {scaleQty(ing.cantidad, servings, data.porciones || 4)}
                         </span>
                       </li>
                     );
@@ -492,6 +492,7 @@ const Metric = ({ icon, label, value }) => (
 
 // Ojo Culinario: scaling con fracciones humanas y redondeo inteligente
 function scaleQty(qty, servings, base = 4) {
+  if (!qty) return '';
   const factor = servings / base;
   if (factor === 1) return qty;
   
