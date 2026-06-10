@@ -415,7 +415,9 @@ const SearchResultCard = ({ result, onOpen, isFav, onFav, rank, topMatch }) => {
               gap: 4,
               border: '1px solid rgba(184, 64, 31, 0.15)'
             }}>
-              ★ Patrocinado
+              ★ Patrocinado {result.ingredientesPatrocinados && result.ingredientesPatrocinados.length > 0 ? (
+                `por ${result.ingredientesPatrocinados.map(ing => ing.split(' ').pop()).filter((v, i, self) => self.indexOf(v) === i).join(' & ')}`
+              ) : ''}
             </span>
           )}
           <CategoryBadge name={result.categoria} size="sm" />

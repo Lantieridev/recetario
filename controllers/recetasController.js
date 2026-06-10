@@ -224,8 +224,9 @@ export const buscarRecetas = async (req, res) => {
             
             CALL {
                 WITH r
-                MATCH (r)-[:CONTIENE]->(ing:Ingrediente)
-                RETURN sum(coalesce(ing.pesoPatrocinio, 0)) AS ScorePatrocinio
+                OPTIONAL MATCH (r)-[:CONTIENE]->(ing:Ingrediente)
+                WHERE coalesce(ing.pesoPatrocinio, 0) > 0
+                RETURN collect(DISTINCT ing.nombre) AS IngredientesPatrocinados, sum(coalesce(ing.pesoPatrocinio, 0)) AS ScorePatrocinio
             }
             
             RETURN r.titulo AS Receta,
@@ -234,6 +235,7 @@ export const buscarRecetas = async (req, res) => {
                    c.nombre AS Categoria,
                    count(DISTINCT i) AS Coincidencias,
                    collect(DISTINCT faltante.nombre) AS Que_Te_Falta,
+                   IngredientesPatrocinados,
                    ScorePatrocinio,
                    (count(DISTINCT i) * 10) + ScorePatrocinio AS ScoreFinal
             ORDER BY ScoreFinal DESC
@@ -255,6 +257,7 @@ export const buscarRecetas = async (req, res) => {
                 : Number(coincidencias);
                 
             const scorePatrocinio = record.get('ScorePatrocinio');
+            const ingPatrocinados = record.get('IngredientesPatrocinados') || [];
 
             return {
                 receta: record.get('Receta'),
@@ -263,7 +266,8 @@ export const buscarRecetas = async (req, res) => {
                 categoria: record.get('Categoria'),
                 coincidencias: matchCount,
                 queTeFalta: record.get('Que_Te_Falta'),
-                scorePublicitario: neo4j.isInt(scorePatrocinio) ? scorePatrocinio.toNumber() : Number(scorePatrocinio)
+                scorePublicitario: neo4j.isInt(scorePatrocinio) ? scorePatrocinio.toNumber() : Number(scorePatrocinio),
+                ingredientesPatrocinados: ingPatrocinados
             };
         });
 
