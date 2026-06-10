@@ -19,14 +19,22 @@ const ACCENT_OPTIONS = [
 // ─────────────────────────────────────────────────────────────
 const TopNav = ({ user, route, onRoute, onLogout }) => {
   const isEmpresa = user && (user.nombre.toLowerCase().includes('empresa') || user.nombre.toLowerCase() === 'bima');
-  const items = [
-    { id: 'browse', label: 'Recetas', icon: 'book' },
-    { id: 'search', label: 'Buscar', icon: 'search' },
-    { id: 'comunidad', label: 'Comunidad', icon: 'chef' },
-    { id: 'profile', label: 'Mi cocina', icon: 'user' },
-  ];
-  if (isEmpresa) {
-    items.push({ id: 'dashboard', label: 'Dashboard', icon: 'sliders' });
+  let items;
+  if (user && user.isB2B) {
+    items = [
+      { id: 'b2b', label: 'Portal B2B', icon: 'sliders' },
+      { id: 'search', label: 'Buscar', icon: 'search' },
+    ];
+  } else {
+    items = [
+      { id: 'browse', label: 'Recetas', icon: 'book' },
+      { id: 'search', label: 'Buscar', icon: 'search' },
+      { id: 'comunidad', label: 'Comunidad', icon: 'chef' },
+      { id: 'profile', label: 'Mi cocina', icon: 'user' },
+    ];
+    if (isEmpresa) {
+      items.push({ id: 'dashboard', label: 'Dashboard', icon: 'sliders' });
+    }
   }
 
   return (
@@ -196,8 +204,15 @@ const App = () => {
 
   // Persist auth
   useEffect(() => {
-    if (user) localStorage.setItem(LS_AUTH, JSON.stringify(user));
-    else localStorage.removeItem(LS_AUTH);
+    if (user) {
+      localStorage.setItem(LS_AUTH, JSON.stringify(user));
+      // Si el usuario acaba de iniciar sesión y es B2B, redirigir automáticamente al portal
+      if (user.isB2B && route.name !== 'b2b' && route.name !== 'search') {
+        setRoute({ name: 'b2b' });
+      }
+    } else {
+      localStorage.removeItem(LS_AUTH);
+    }
   }, [user]);
 
   // Apply tweaks to CSS
@@ -295,6 +310,7 @@ const App = () => {
     case 'b2b':
       screen = (
         <B2BPortalScreen
+          user={user}
           onNavigateToSearch={() => navigate({ name: 'search' })}
         />
       );
@@ -351,8 +367,6 @@ const App = () => {
           options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]}
           onChange={v => setTweak('theme', v)}
         />
-        <TweakSection label="B2B Monetización" />
-        <TweakButton label="Abrir Portal B2B" onClick={() => { navigate({ name: 'b2b' }); window.postMessage({ type: '__deactivate_edit_mode' }, '*'); }} />
         <TweakSection label="Datos" />
         <TweakButton label="Reiniciar al seed original" onClick={() => window.__resetSeed?.()} />
       </TweaksPanel>
