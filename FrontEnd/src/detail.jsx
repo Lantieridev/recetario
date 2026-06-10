@@ -325,7 +325,7 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                         )}
                       </span>
                     </div>
-                    <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', textDecoration: checked ? 'line-through' : 'none' }}>
+                    <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink)', textDecoration: checked ? 'line-through' : 'none' }}>
                       {scaleQty(ing.cantidad, servings, data.porciones || 4)}
                     </span>
                   </li>
@@ -370,7 +370,7 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
                             )}
                           </span>
                         </div>
-                        <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink-3)', textDecoration: checked ? 'line-through' : 'none' }}>
+                        <span className="font-mono" style={{ fontSize: 12, color: 'var(--ink)', textDecoration: checked ? 'line-through' : 'none' }}>
                           {scaleQty(ing.cantidad, servings, data.porciones || 4)}
                         </span>
                       </li>
