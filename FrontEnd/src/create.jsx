@@ -84,52 +84,46 @@ const ValidBadge = ({ ok, text }) => (
   </span>
 );
 
-/* ── Units for ingredients ─────────────────────────────────────── */
-const UNIDADES = [
-  { value: 'g',    label: 'g'     },
-  { value: 'kg',   label: 'kg'    },
-  { value: 'ml',   label: 'ml'    },
-  { value: 'l',    label: 'l'     },
-  { value: 'taza', label: 'taza'  },
-  { value: 'cdta', label: 'cdta'  }, // cucharadita
-  { value: 'cda',  label: 'cda'   }, // cucharada
-  { value: 'u',    label: 'u (unid.)' },
-  { value: 'pizca',label: 'pizca' },
-  { value: 'al gusto', label: 'al gusto' },
-  { value: 'c/n',  label: 'c/n'   }, // cantidad necesaria
+/* ── Units for ingredients (matching stage-5) ───────────────────── */
+const UNIDADES_ESPECIALES = ['a gusto'];
+const UNIDADES_OPTIONS = [
+  { value: 'gramos',       label: 'gramos' },
+  { value: 'mililitros',   label: 'mililitros' },
+  { value: 'tazas',        label: 'tazas' },
+  { value: 'cucharadas',   label: 'cucharadas' },
+  { value: 'cucharaditas', label: 'cucharaditas' },
+  { value: 'unidades',     label: 'unidades' },
+  { value: 'a gusto',      label: 'a gusto' },
 ];
 
-/* ── Ingredient unit selector ──────────────────────────────────── */
-const IngredientAmountInput = ({ cantidad, unidad, onChangeCantidad, onChangeUnidad, error }) => {
-  const needsNumber = !['al gusto', 'c/n', 'pizca'].includes(unidad);
+/* ── Ingredientes comunes quick-add ─────────────────────────────── */
+const COMUNES = ['Sal', 'Pimienta', 'Aceite', 'Cebolla', 'Ajo', 'Harina', 'Huevo'];
+
+/* ── Ingredient amount input (number + unit select) ────────────── */
+const IngredientAmountInput = ({ cantidadVal, cantidadUnidad, onChangeCantidad, onChangeUnidad, error }) => {
+  const isEspecial = UNIDADES_ESPECIALES.includes(cantidadUnidad);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <label className="field-label">Cantidad</label>
-      <div style={{ display: 'flex', gap: 0, borderRadius: 'var(--radius)', overflow: 'hidden', border: `1.5px solid ${error ? 'var(--accent)' : 'var(--rule)'}`, background: 'var(--paper)', transition: 'border-color .2s' }}>
-        {needsNumber && (
-          <input
-            type="number"
-            min="0"
-            step="any"
-            placeholder="0"
-            value={cantidad}
-            onChange={(e) => onChangeCantidad(e.target.value)}
-            style={{
-              width: 72, padding: '0 10px', height: 44, border: 'none', background: 'transparent',
-              fontSize: 15, textAlign: 'center', outline: 'none', color: 'var(--ink)',
-            }}
-          />
-        )}
-        {needsNumber && <div style={{ width: 1, background: 'var(--rule)', alignSelf: 'stretch', flexShrink: 0 }} />}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          type="number"
+          min="0"
+          step="any"
+          placeholder="200"
+          disabled={isEspecial}
+          value={cantidadVal}
+          onChange={(e) => onChangeCantidad(e.target.value)}
+          className="input"
+          style={{ flex: 1, borderColor: error ? 'var(--accent)' : undefined, opacity: isEspecial ? 0.4 : 1 }}
+        />
         <select
-          value={unidad}
+          value={cantidadUnidad}
           onChange={(e) => onChangeUnidad(e.target.value)}
-          style={{
-            flex: 1, border: 'none', background: 'transparent', padding: '0 10px',
-            fontSize: 14, color: 'var(--ink-2)', cursor: 'pointer', outline: 'none', height: 44,
-          }}
+          className="select"
+          style={{ width: 140 }}
         >
-          {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+          {UNIDADES_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
         </select>
       </div>
       {error && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{error}</span>}
@@ -137,16 +131,21 @@ const IngredientAmountInput = ({ cantidad, unidad, onChangeCantidad, onChangeUni
   );
 };
 
-/* ── tiempo label ──────────────────────────────────────────────── */
-const formatTiempoLabel = (tiempo) => {
-  const hs = parseInt(tiempo.hs) || 0;
-  const min = parseInt(tiempo.min) || 0;
-  const totalMin = hs * 60 + min;
-  if (totalMin === 0) return null;
-  if (totalMin < 60) return `${totalMin} min`;
-  if (totalMin % 60 === 0) return `${hs} hora${hs > 1 ? 's' : ''}`;
-  return `${hs}h ${min}min`;
+/* ── formatTiempo (from stage-5, converts val+unit to readable) ── */
+const formatTiempo = (val, unidad) => {
+  const n = parseInt(val) || 0;
+  if (n === 0) return null;
+  const totalMins = unidad === 'horas' ? n * 60 : n;
+  if (totalMins < 60) return `${totalMins} min`;
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}min`;
 };
+
+/* ── cleanStepText (from stage-5) ──────────────────────────────── */
+const cleanStepText = (text) =>
+  text.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(l => l !== '').join('\n').trim();
 
 /* ── Difficulty label traducido ─────────────────────────────────── */
 const DIFF_MAP = { Baja: 'Baja', Media: 'Media', Alta: 'Alta' };
@@ -270,8 +269,8 @@ const validate = (form) => {
     errors.categoria = 'Elegí una categoría';
 
   // Tiempo mínimo: al menos 1 minuto
-  const totalMin = (parseInt(form.tiempo.hs) || 0) * 60 + (parseInt(form.tiempo.min) || 0);
-  if (totalMin === 0)
+  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
+  if (!tiempoLabel)
     errors.tiempo = 'Ingresá el tiempo de preparación (mínimo 1 minuto)';
 
   if (form.ingredientes.length === 0)
@@ -288,8 +287,8 @@ const validate = (form) => {
 };
 
 /* ── Validation summary bar ────────────────────────────────────── */
-const ValidationBar = ({ form, touched }) => {
-  const totalMin = (parseInt(form.tiempo.hs) || 0) * 60 + (parseInt(form.tiempo.min) || 0);
+const ValidationBar = ({ form }) => {
+  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
   const stepsFilled = form.pasos.filter(p => p.texto.trim()).length;
   const stepsTotal = form.pasos.length;
   const stepsOk = stepsFilled === stepsTotal && stepsTotal > 0;
@@ -297,7 +296,7 @@ const ValidationBar = ({ form, touched }) => {
   const checks = [
     { key: 'titulo', ok: form.titulo.trim().length >= 3, label: 'Título' },
     { key: 'categoria', ok: !!form.categoria, label: 'Categoría' },
-    { key: 'tiempo', ok: totalMin > 0, label: 'Tiempo' },
+    { key: 'tiempo', ok: !!tiempoLabel, label: 'Tiempo' },
     { key: 'ingredientes', ok: form.ingredientes.length > 0, label: 'Ingredientes' },
     { key: 'pasos', ok: stepsOk, label: stepsOk ? `${stepsTotal} paso${stepsTotal > 1 ? 's' : ''}` : `${stepsFilled}/${stepsTotal} pasos` },
   ];
@@ -331,14 +330,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     descripcion: '',
     categoria: '',
     dificultad: 'Media',
-    tiempo: { hs: '', min: '' },
+    tiempoVal: '30',
+    tiempoUnidad: 'minutos',
+    porciones: '4',
     metodoCoccion: 'Horno',
     imagenUrl: '',
     ingredientes: [],
     pasos: [{ texto: '', timer: { hs: '', min: '' } }]
   });
 
-  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidad: '', unidad: 'g', esOpcional: false });
+  const [ingDraft, setIngDraft] = useState({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos', esOpcional: false });
   const [ingErrors, setIngErrors] = useState({});
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -360,8 +361,8 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
   const validateIng = () => {
     const errs = {};
     if (!ingDraft.nombre.trim()) errs.nombre = 'Ingresá el ingrediente';
-    const needsNumber = !['al gusto', 'c/n', 'pizca'].includes(ingDraft.unidad);
-    if (needsNumber && (!ingDraft.cantidad || isNaN(parseFloat(ingDraft.cantidad)) || parseFloat(ingDraft.cantidad) <= 0)) {
+    const isEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
+    if (!isEspecial && (!ingDraft.cantidadVal || isNaN(parseFloat(ingDraft.cantidadVal)) || parseFloat(ingDraft.cantidadVal) <= 0)) {
       errs.cantidad = 'Cantidad inválida';
     }
     setIngErrors(errs);
@@ -373,10 +374,10 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     if (form.ingredientes.some(i => i.nombre.toLowerCase() === ingDraft.nombre.toLowerCase())) {
       toast('Ya está en la lista'); return;
     }
-    const needsNumber = !['al gusto', 'c/n', 'pizca'].includes(ingDraft.unidad);
-    const cantidadDisplay = needsNumber ? `${ingDraft.cantidad} ${ingDraft.unidad}` : ingDraft.unidad;
+    const isEspecial = UNIDADES_ESPECIALES.includes(ingDraft.cantidadUnidad);
+    const cantidadDisplay = isEspecial ? ingDraft.cantidadUnidad : `${ingDraft.cantidadVal} ${ingDraft.cantidadUnidad}`;
     setForm({ ...form, ingredientes: [...form.ingredientes, { ...ingDraft, cantidadDisplay }] });
-    setIngDraft({ nombre: '', cantidad: '', unidad: 'g', esOpcional: false });
+    setIngDraft({ nombre: '', cantidadVal: '', cantidadUnidad: 'gramos', esOpcional: false });
     setIngErrors({});
   };
 
@@ -407,16 +408,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     setSaving(true);
     setError(null);
     try {
-      const totalMin = (parseInt(form.tiempo.hs) || 0) * 60 + (parseInt(form.tiempo.min) || 0);
-      let tiempoStr = formatTiempoLabel(form.tiempo) || '30 min';
+      const tiempoStr = formatTiempo(form.tiempoVal, form.tiempoUnidad) || '30 min';
 
       const pasosStr = form.pasos
         .filter(p => p.texto.trim())
         .map((p, i) => {
+          const cleaned = cleanStepText(p.texto);
           const timer = p.timer.hs || p.timer.min
             ? ` [⏱ ${p.timer.hs ? p.timer.hs + 'h ' : ''}${p.timer.min ? p.timer.min + 'min' : ''}]`
             : '';
-          return `${i + 1}. ${p.texto}${timer}`;
+          return `${i + 1}. ${cleaned}${timer}`;
         })
         .join('\n');
 
@@ -426,6 +427,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         categoria: form.categoria,
         dificultad: form.dificultad,
         tiempo: tiempoStr,
+        porciones: parseInt(form.porciones) || 4,
         creador: user.nombre,
         pasos: pasosStr,
         imagen: form.imagenUrl || null
@@ -449,8 +451,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
     }
   };
 
-  const totalMin = (parseInt(form.tiempo.hs) || 0) * 60 + (parseInt(form.tiempo.min) || 0);
-  const tiempoLabel = formatTiempoLabel(form.tiempo);
+  const tiempoLabel = formatTiempo(form.tiempoVal, form.tiempoUnidad);
   const allErrors = submitted ? validate(form) : {};
   const canSubmit = Object.keys(validate(form)).length === 0;
 
@@ -564,7 +565,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                 </div>
 
                 {/* Categoria + Dificultad */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: form.titulo && form.categoria ? 24 : 0 }}>
                   <div className="field">
                     <CustomDropdown
                       label="Categoría *"
@@ -599,6 +600,16 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Vista previa */}
+                {form.titulo && form.categoria && (
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 10 }}>Vista previa</div>
+                    <div style={{ maxWidth: 280 }}>
+                      <RecipeCover titulo={form.titulo} categoria={form.categoria} height={180} />
+                    </div>
+                  </div>
+                )}
               </section>
 
               <Divider />
@@ -606,17 +617,48 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
               {/* ── 2. Tiempo y cocción ── */}
               <section>
                 <SectionHeader number="2" title="Tiempo y cocción" subtitle="Cuánto tarda y cómo se cocina" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 40, alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 24, alignItems: 'start' }}>
+                  {/* Tiempo */}
                   <div className="field">
                     <label className="field-label">Tiempo total *</label>
-                    <HoursMinutesInput value={form.tiempo} onChange={(v) => setForm({ ...form, tiempo: v })} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        type="number"
+                        min="1"
+                        className="input focus-ring"
+                        placeholder="30"
+                        style={{ flex: 1, borderColor: allErrors.tiempo ? 'var(--accent)' : undefined }}
+                        value={form.tiempoVal}
+                        onChange={(e) => setForm({ ...form, tiempoVal: e.target.value })}
+                      />
+                      <select
+                        className="select"
+                        style={{ width: 110 }}
+                        value={form.tiempoUnidad}
+                        onChange={(e) => setForm({ ...form, tiempoUnidad: e.target.value })}
+                      >
+                        <option value="minutos">minutos</option>
+                        <option value="horas">horas</option>
+                      </select>
+                    </div>
                     {allErrors.tiempo && <span style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>⚠ {allErrors.tiempo}</span>}
                     {tiempoLabel && !allErrors.tiempo && (
-                      <span style={{ fontSize: 12, color: '#5a7a40', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        ✓ {tiempoLabel}
-                      </span>
+                      <span style={{ fontSize: 12, color: '#5a7a40', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>✓ {tiempoLabel}</span>
                     )}
                   </div>
+                  {/* Porciones */}
+                  <div className="field">
+                    <label className="field-label">Porciones</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="input focus-ring"
+                      placeholder="4"
+                      value={form.porciones}
+                      onChange={(e) => setForm({ ...form, porciones: e.target.value })}
+                    />
+                  </div>
+                  {/* Método */}
                   <div className="field">
                     <label className="field-label">Método principal</label>
                     <CookingMethodChips value={form.metodoCoccion} onChange={(v) => setForm({ ...form, metodoCoccion: v })} />
@@ -678,10 +720,10 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
                     {/* Cantidad + Unidad */}
                     <IngredientAmountInput
-                      cantidad={ingDraft.cantidad}
-                      unidad={ingDraft.unidad}
-                      onChangeCantidad={(v) => { setIngDraft({ ...ingDraft, cantidad: v }); setIngErrors({ ...ingErrors, cantidad: null }); }}
-                      onChangeUnidad={(v) => setIngDraft({ ...ingDraft, unidad: v, cantidad: '' })}
+                      cantidadVal={ingDraft.cantidadVal}
+                      cantidadUnidad={ingDraft.cantidadUnidad}
+                      onChangeCantidad={(v) => { setIngDraft({ ...ingDraft, cantidadVal: v }); setIngErrors({ ...ingErrors, cantidad: null }); }}
+                      onChangeUnidad={(v) => setIngDraft({ ...ingDraft, cantidadUnidad: v, cantidadVal: '' })}
                       error={ingErrors.cantidad}
                     />
 
@@ -699,7 +741,31 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Quick-add comunes */}
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--rule-soft)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', flexShrink: 0 }}>Comunes:</span>
+                    {COMUNES.map(s => (
+                      <button key={s} type="button" onClick={() => setIngDraft({ ...ingDraft, nombre: s })} className="chip" style={{ height: 26, fontSize: 12, cursor: 'pointer' }}>
+                        + {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Ingredient list header */}
+                {form.ingredientes.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 500 }}>Tu lista ({form.ingredientes.length})</span>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, ingredientes: [] })}
+                      style={{ fontSize: 13, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ink-3)'}
+                    >Vaciar</button>
+                  </div>
+                )}
 
                 {/* Ingredient list */}
                 {form.ingredientes.length > 0 ? (
