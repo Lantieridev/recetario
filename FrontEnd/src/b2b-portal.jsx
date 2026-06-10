@@ -103,7 +103,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
             }}>
               Portal Corporativo B2B
             </span>
-            <span className="text-faint" style={{ fontSize: 13 }}>Graph Monetization Console</span>
+            <span className="text-faint" style={{ fontSize: 13 }}>Consola de Monetización Corporativa</span>
           </div>
           <h1 className="font-display" style={{
             fontSize: 'clamp(44px, 5.5vw, 68px)',
@@ -112,7 +112,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
             letterSpacing: '-0.025em',
             textWrap: 'balance',
           }}>
-            Optimización algorítmica <br/>y <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>subastas del grafo</em>
+            Optimización comercial <br/>y <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>pujas patrocinadas</em>
           </h1>
           <p className="text-muted" style={{ fontSize: 17, margin: 0, maxWidth: 620 }}>
             Panel exclusivo para partners comerciales. Configuración de pesos publicitarios de ingredientes
@@ -172,16 +172,16 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--rule-soft)', paddingTop: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                    <span className="text-muted">Estado de Conexión:</span>
+                    <span className="text-muted">Estado de Cuenta:</span>
                     <span style={{ color: 'var(--cat-veg)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cat-veg)', display: 'inline-block' }}></span>
-                      Conexión Segura SSL
+                      Activa y Verificada
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                     <span className="text-muted">API Key:</span>
-                    <code className="font-mono" style={{ background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--ink)' }}>
-                      {selectedApiKey}
+                    <code className="font-mono" style={{ background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--ink-2)' }}>
+                      {selectedApiKey.substring(0, 5)}••••••••
                     </code>
                   </div>
                 </div>
@@ -278,7 +278,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                     marginTop: 12
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--cat-veg)', fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
-                      <Icon name="check" size={16} stroke={2.4}/> Operación Exitosa en Neo4j
+                      <Icon name="check" size={16} stroke={2.4}/> Operación Exitosa
                     </div>
                     <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 12px' }}>
                       {responseMsg.message}
