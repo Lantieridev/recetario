@@ -20,7 +20,13 @@ const ACCENT_OPTIONS = [
 const TopNav = ({ user, route, onRoute, onLogout }) => {
   const isEmpresa = user && (user.nombre.toLowerCase().includes('empresa') || user.nombre.toLowerCase() === 'bima');
   let items;
-  if (user && user.isB2B) {
+  if (user && user.isAdmin) {
+    items = [
+      { id: 'admin', label: 'Admin', icon: 'sliders' },
+      { id: 'browse', label: 'Recetas', icon: 'book' },
+      { id: 'search', label: 'Buscar', icon: 'search' },
+    ];
+  } else if (user && user.isB2B) {
     items = [
       { id: 'b2b', label: 'Portal B2B', icon: 'sliders' },
       { id: 'search', label: 'Buscar', icon: 'search' },
@@ -312,6 +318,13 @@ const App = () => {
         <B2BPortalScreen
           user={user}
           onNavigateToSearch={() => navigate({ name: 'search' })}
+        />
+      );
+      break;
+    case 'admin':
+      screen = (
+        <AdminDashboardScreen
+          user={user}
         />
       );
       break;
