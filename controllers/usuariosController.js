@@ -230,7 +230,8 @@ export const loginUsuario = async (req, res) => {
     const session = getSession();
     try {
         const query = `
-            MATCH (u:Usuario {nombre: $nombre})
+            MATCH (u:Usuario)
+            WHERE toLower(u.nombre) = toLower($nombre)
             RETURN u.nombre AS nombre, u.mail AS mail, u.contrasena AS contrasena, u.isAdmin AS isAdmin
         `;
 
