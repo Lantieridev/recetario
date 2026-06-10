@@ -123,14 +123,16 @@ export const agregarFavorito = async (req, res) => {
             return res.status(404).json({ error: `Receta '${tituloReceta}' no encontrada` });
         }
 
+        const fechaStr = new Date().toISOString().split('T')[0];
         const query = `
             MATCH (u:Usuario {nombre: $nombre})
             MATCH (r:Receta {titulo: $tituloReceta})
             MERGE (u)-[f:GUARDO_FAV]->(r)
+            ON CREATE SET f.fecha = $fechaStr
             RETURN u.nombre AS usuario, r.titulo AS receta
         `;
 
-        const result = await session.run(query, { nombre, tituloReceta });
+        const result = await session.run(query, { nombre, tituloReceta, fechaStr });
         const record = result.records[0];
 
         res.status(200).json({
@@ -315,9 +317,10 @@ export const toggleFavorito = async (req, res) => {
             added = false;
         } else {
             // No existe -> Crear
+            const fechaStr = new Date().toISOString().split('T')[0];
             await session.run(
-                'MATCH (u:Usuario {nombre: $nombre}), (r:Receta {titulo: $tituloReceta}) MERGE (u)-[:GUARDO_FAV]->(r)',
-                { nombre, tituloReceta }
+                'MATCH (u:Usuario {nombre: $nombre}), (r:Receta {titulo: $tituloReceta}) MERGE (u)-[f:GUARDO_FAV]->(r) ON CREATE SET f.fecha = $fechaStr',
+                { nombre, tituloReceta, fechaStr }
             );
             added = true;
         }
