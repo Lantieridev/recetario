@@ -60,13 +60,14 @@ const AuthScreen = ({ onAuth }) => {
   };
 
   const quickLogin = async (nombre) => {
-    setForm({ nombre, mail: '', contrasena: 'pass123' });
+    const contrasena = nombre === 'Admin' ? 'admin123' : (nombre === 'Ornella' ? 'pass123' : nombre === 'Juan' ? 'pass456' : 'pass789');
+    setForm({ nombre, mail: '', contrasena });
     setError(null);
     setLoading(true);
     try {
       const { usuario } = await window.api.login({
         nombre,
-        contrasena: nombre === 'Ornella' ? 'pass123' : nombre === 'Juan' ? 'pass456' : 'pass789',
+        contrasena,
       });
       // Verificar si es B2B/Admin en background
       try {
@@ -365,17 +366,18 @@ const AuthScreen = ({ onAuth }) => {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {userType === 'cocinero' ? (
-                ['Ornella', 'Juan', 'Ana'].map(n => (
+                ['Admin', 'Ornella', 'Juan', 'Ana'].map(n => (
                   <button
                     key={n}
                     type="button"
                     className="chip"
                     onClick={() => quickLogin(n)}
                     disabled={loading}
+                    style={n === 'Admin' ? { border: '1.5px solid var(--accent)', color: 'var(--accent)' } : undefined}
                   >
                     <span style={{
                       width: 18, height: 18, borderRadius: 999,
-                      background: 'var(--ink)', color: 'var(--paper)',
+                      background: n === 'Admin' ? 'var(--accent)' : 'var(--ink)', color: 'var(--paper)',
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 10, fontWeight: 600,
                     }}>
