@@ -203,6 +203,32 @@
     return handleResponse(res);
   };
 
+  api.seguirUsuario = async (nombre, seguidor) => {
+    await delay();
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/seguir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seguidor })
+    });
+    return handleResponse(res);
+  };
+
+  api.dejarDeSeguirUsuario = async (nombre, seguidor) => {
+    await delay();
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/dejardeseguir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seguidor })
+    });
+    return handleResponse(res);
+  };
+
+  api.feedSeguidos = async (usuario) => {
+    await delay();
+    const res = await fetch(`/api/recetas/feed/seguidos?usuario=${encodeURIComponent(usuario)}`);
+    return handleResponse(res);
+  };
+
   // ─────────────────────────────────────────────────────────────
   //  ADMIN ENDPOINTS
   // ─────────────────────────────────────────────────────────────

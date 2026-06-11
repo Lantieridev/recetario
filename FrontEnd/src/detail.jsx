@@ -125,6 +125,7 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
   const [data, setData] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [related, setRelated] = useState([]);
   const [checkedSteps, setCheckedSteps] = useState(new Set());
   const [checkedIngs, setCheckedIngs] = useState(new Set());
@@ -146,15 +147,37 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
       if (alive) setRelated(list.recetas.filter(r => r.id !== id).slice(0, 6));
     });
     window.api.obtenerUsuario(user.nombre).then(r => {
-      if (alive) setIsFav(new Set(r.usuario.recetasFavoritas).has(id));
+      if (alive) {
+        setIsFav(new Set(r.usuario.recetasFavoritas).has(id));
+      }
     });
     return () => { alive = false; };
   }, [id, user]);
+
+  useEffect(() => {
+    if (data && user) {
+      window.api.obtenerUsuario(user.nombre).then(r => {
+        setIsFollowing(r.usuario.seguidos?.includes(data.creador));
+      });
+    }
+  }, [data, user]);
 
   const toggleFav = async () => {
     const res = await window.api.toggleFavorito(user.nombre, id);
     setIsFav(res.added);
     toast(res.added ? 'Guardada en tu colección' : 'Quitada de favoritos', { icon: res.added ? 'bookmarkFilled' : 'check' });
+  };
+
+  const toggleFollow = async () => {
+    if (isFollowing) {
+      await window.api.dejarDeSeguirUsuario(data.creador, user.nombre);
+      setIsFollowing(false);
+      toast(`Dejaste de seguir a ${data.creador}`);
+    } else {
+      await window.api.seguirUsuario(data.creador, user.nombre);
+      setIsFollowing(true);
+      toast(`Ahora sigues a ${data.creador}`, { icon: 'check' });
+    }
   };
 
   const handleFinishCookMode = async () => {
@@ -219,6 +242,23 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
                 <span style={{ fontSize: 13 }}>por {data.creador}</span>
                 {data.creador && <span style={{ color: 'var(--accent)', background: 'var(--accent-soft)', padding: 2, borderRadius: '50%', display: 'flex' }}><Icon name="check" size={10} stroke={3} /></span>}
               </div>
+              {data.creador !== user.nombre && (
+                <button
+                  onClick={toggleFollow}
+                  className="btn btn-sm focus-ring"
+                  style={{
+                    marginLeft: 12,
+                    padding: '4px 12px',
+                    fontSize: 12,
+                    borderRadius: 999,
+                    background: isFollowing ? 'var(--paper-2)' : 'var(--ink)',
+                    color: isFollowing ? 'var(--ink-2)' : 'var(--paper)',
+                    border: isFollowing ? '1px solid var(--rule)' : 'none'
+                  }}
+                >
+                  {isFollowing ? 'Siguiendo' : 'Seguir'}
+                </button>
+              )}
             </div>
             <h1 className="font-display" style={{
               fontSize: 'clamp(46px, 6vw, 78px)',
