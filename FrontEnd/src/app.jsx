@@ -315,9 +315,15 @@ const App = () => {
           id={route.id}
           user={user}
           initialData={route.initialData}
-          onBack={() => navigate({ name: route.from || 'browse' })}
-          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route.from || 'browse' })}
-          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
+          onBack={() => {
+            if (route.from && typeof route.from === 'object') {
+              navigate(route.from);
+            } else {
+              navigate({ name: route.from || 'browse' });
+            }
+          }}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username, from: route })}
         />
       );
       break;
@@ -325,7 +331,7 @@ const App = () => {
       screen = (
         <SearchScreen
           user={user}
-          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'search' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route })}
         />
       );
       break;
@@ -334,10 +340,11 @@ const App = () => {
         <ProfileScreen
           user={user}
           targetUsername={route.username || user.nombre}
-          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'profile' })}
+          onBack={route.from ? () => navigate(route.from) : null}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route })}
           onCreateRecipe={() => navigate({ name: 'create' })}
           onExploreRecipes={() => navigate({ name: 'browse' })}
-          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username, from: route })}
         />
       );
       break;
@@ -345,8 +352,8 @@ const App = () => {
       screen = (
         <ComunidadScreen
           user={user}
-          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'comunidad' })}
-          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username, from: route })}
         />
       );
       break;

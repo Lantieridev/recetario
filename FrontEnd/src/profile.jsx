@@ -1,7 +1,7 @@
 /* eslint-disable */
 // Profile: perfil + recetas creadas + favoritas + recomendaciones colaborativas
 
-const ProfileScreen = ({ user, targetUsername, onOpenRecipe, onCreateRecipe, onExploreRecipes, onNavigateProfile }) => {
+const ProfileScreen = ({ user, targetUsername, onOpenRecipe, onCreateRecipe, onExploreRecipes, onNavigateProfile, onBack }) => {
   const [profile, setProfile] = useState(null);
   const [meProfile, setMeProfile] = useState(null);
   const [recetasMap, setRecetasMap] = useState({});
@@ -116,8 +116,17 @@ const ProfileScreen = ({ user, targetUsername, onOpenRecipe, onCreateRecipe, onE
 
   return (
     <div data-screen-label="Profile" className="fade-in">
+      {/* Back bar */}
+      {!isSelf && onBack && (
+        <div className="container" style={{ padding: '20px 32px 0' }}>
+          <button onClick={onBack} className="btn btn-ghost btn-sm focus-ring">
+            <Icon name="back" size={14} /> Volver
+          </button>
+        </div>
+      )}
+
       {/* Header */}
-      <section style={{ padding: '56px 0 32px' }}>
+      <section style={{ padding: isSelf ? '56px 0 32px' : '36px 0 32px' }}>
         <div className="container">
           <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{
