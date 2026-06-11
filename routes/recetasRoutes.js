@@ -26,9 +26,9 @@ router.get('/estadisticas-publicas', obtenerEstadisticasPublicas);
 router.post('/', crearReceta);
 router.get('/', listarRecetas);
 router.post('/ingredientes/:ingrediente/alergenos', enlazarAlergeno);
-router.post('/:titulo/ingredientes', agregarIngrediente);
-router.get('/:titulo/similares', obtenerRecetasSimilares);
-router.get('/:titulo/grafo', obtenerGrafoReceta);
-router.get('/:titulo', obtenerReceta);
+router.post('/:id/ingredientes', agregarIngrediente);
+router.get('/:id/similares', obtenerRecetasSimilares);
+router.get('/:id/grafo', obtenerGrafoReceta);
+router.get('/:id', obtenerReceta);
 
 export default router;
