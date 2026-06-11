@@ -203,22 +203,22 @@
     return handleResponse(res);
   };
 
-  api.seguirUsuario = async (nombre, seguidor) => {
+  api.seguirUsuario = async (creador, seguidor) => {
     await delay();
-    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/seguir`, {
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(seguidor)}/seguir`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seguidor })
+      body: JSON.stringify({ usuarioASeguir: creador })
     });
     return handleResponse(res);
   };
 
-  api.dejarDeSeguirUsuario = async (nombre, seguidor) => {
+  api.dejarDeSeguirUsuario = async (creador, seguidor) => {
     await delay();
-    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/dejardeseguir`, {
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(seguidor)}/dejardeseguir`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seguidor })
+      body: JSON.stringify({ usuarioADejar: creador })
     });
     return handleResponse(res);
   };
