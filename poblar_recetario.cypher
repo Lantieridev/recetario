@@ -176,35 +176,6 @@ CREATE (r)-[:CONTIENE {cantidad: '2 cdas'}]->(aceite)
 CREATE (r)-[:CONTIENE {cantidad: '25g'}]->(levadura)
 CREATE (r)-[:CONTIENE {cantidad: 'c/n'}]->(oregano);
 
-// ---------- 4.4 Milanesa de berenjena (Vegetariano) ----------
-MATCH (cat:Categoria {nombre: 'Vegetariano'})
-MATCH (user:Usuario {nombre: 'Ana'})
-MATCH (berenjena:Ingrediente {nombre: 'Berenjena'})
-MATCH (huevo:Ingrediente {nombre: 'Huevo'})
-MATCH (panRallado:Ingrediente {nombre: 'Pan Rallado'})
-MATCH (salsa:Ingrediente {nombre: 'Salsa de Tomate'})
-MATCH (muzza:Ingrediente {nombre: 'Queso Muzzarella'})
-MATCH (sal:Ingrediente {nombre: 'Sal'})
-MATCH (aceite:Ingrediente {nombre: 'Aceite'})
-CREATE (r:Receta {
-  id: randomUUID(),
-  titulo: 'Milanesa de berenjena',
-  descripcion: 'Milanesa vegetariana de berenjena gratinada con salsa y queso',
-  dificultad: 'Media',
-  tiempo: '35 min',
-  imagen: 'https://images.unsplash.com/photo-1598214886806-c87b2c37078b?w=800&auto=format&fit=crop&q=60',
-  pasos: '1. Cortar las berenjenas en rodajas de 1cm y salarlas para que larguen el amargo (15 min). 2. Secar las rodajas, pasar por huevo batido y pan rallado. 3. Freír en aceite caliente hasta dorar ambos lados. 4. Colocar en una placa, cubrir con salsa de tomate y queso muzzarella. 5. Gratinar en horno por 5 min hasta que el queso se derrita.'
-})
-CREATE (user)-[:CREO]->(r)
-CREATE (r)-[:PERTENECE_A]->(cat)
-CREATE (r)-[:CONTIENE {cantidad: '2 unidades'}]->(berenjena)
-CREATE (r)-[:CONTIENE {cantidad: '2 unidades'}]->(huevo)
-CREATE (r)-[:CONTIENE {cantidad: '200g'}]->(panRallado)
-CREATE (r)-[:CONTIENE {cantidad: '150ml'}]->(salsa)
-CREATE (r)-[:CONTIENE {cantidad: '150g'}]->(muzza)
-CREATE (r)-[:CONTIENE {cantidad: 'c/n'}]->(sal)
-CREATE (r)-[:CONTIENE {cantidad: 'para freir'}]->(aceite);
-
 // ---------- 4.5 Guacamole con nachos (Vegano) ----------
 MATCH (cat:Categoria {nombre: 'Vegano'})
 MATCH (user:Usuario {nombre: 'Ana'})
@@ -503,8 +474,7 @@ MATCH (u:Usuario {nombre: 'Ornella'}), (r:Receta {titulo: 'Pizza margherita'}) C
 MATCH (u:Usuario {nombre: 'Ornella'}), (r:Receta {titulo: 'Flan casero'}) CREATE (u)-[:GUARDO_FAV]->(r);
 MATCH (u:Usuario {nombre: 'Ornella'}), (r:Receta {titulo: 'Risotto al azafrán'}) CREATE (u)-[:GUARDO_FAV]->(r);
 
-// Juan guarda: Milanesa de berenjena, Torta de chocolate, Wok de verduras con pollo, Pan de masa madre
-MATCH (u:Usuario {nombre: 'Juan'}), (r:Receta {titulo: 'Milanesa de berenjena'}) CREATE (u)-[:GUARDO_FAV]->(r);
+// Juan guarda: Torta de chocolate, Wok de verduras con pollo, Pan de masa madre
 MATCH (u:Usuario {nombre: 'Juan'}), (r:Receta {titulo: 'Torta de chocolate'}) CREATE (u)-[:GUARDO_FAV]->(r);
 MATCH (u:Usuario {nombre: 'Juan'}), (r:Receta {titulo: 'Wok de verduras con pollo'}) CREATE (u)-[:GUARDO_FAV]->(r);
 MATCH (u:Usuario {nombre: 'Juan'}), (r:Receta {titulo: 'Pan de masa madre'}) CREATE (u)-[:GUARDO_FAV]->(r);
