@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recetario · Componentes de Grafo</title>
+<link rel="stylesheet" href="styles/theme.css" />
+<style>
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 56px 28px 100px; }
+  .hero-title { font-size: clamp(30px, 5vw, 50px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.02; margin: 0; }
+  .hero-title .grad { background: linear-gradient(100deg, var(--recipe), var(--accent) 55%, var(--user)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-sub { color: var(--text-300); font-size: 16px; max-width: 620px; margin: 16px 0 0; line-height: 1.55; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; }
+  .legend > span { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-300); letter-spacing: 0.04em; }
+  .dot { width: 11px; height: 11px; border-radius: 999px; }
+  section.comp { margin-top: 64px; }
+  .comp-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .comp-num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--accent); border: 1px solid var(--glass-border-strong); border-radius: 8px; padding: 3px 9px; }
+  .comp-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  .comp-desc { color: var(--text-300); font-size: 14.5px; line-height: 1.5; margin: 8px 0 6px; max-width: 760px; }
+  .contract { font-family: var(--font-mono); font-size: 11px; color: var(--text-500); margin-bottom: 18px; }
+  .contract b { color: var(--ingredient); font-weight: 500; }
+  .frame { position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--glass-border); background: radial-gradient(800px 500px at 70% 0%, rgba(245,165,36,0.06), transparent 60%), #0a0806; }
+  .frame-bar { position: absolute; top: 0; left: 0; right: 0; height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 14px; z-index: 30; }
+  .frame-bar i { width: 9px; height: 9px; border-radius: 999px; background: rgba(255,255,255,0.14); display: inline-block; }
+  .frame-bar .fb-label { margin-left: 8px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-500); letter-spacing: 0.05em; }
+  .center-stage { display: grid; place-items: center; padding: 56px 28px 40px; min-height: 0; }
+</style>
+</head>
+<body class="space-bg">
+  <div id="root"></div>
+
+  <!-- Núcleo React -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <!-- Física de grafos -->
+  <script src="https://unpkg.com/react-force-graph-2d"></script>
+
+  <!-- Componentes (cada uno se expone en window.*) -->
+  <script type="text/babel" data-presets="react" src="components/RecipeGraphBackground.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/RecommendationPath.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/AllergyAlert.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/StarMapExplore.jsx"></script>
+
+  <!-- Showroom -->
+  <script type="text/babel" data-presets="react">
+    const { useState } = React;
+
+    const LEGEND = [
+      ['Receta', 'var(--recipe)'],
+      ['Ingrediente', 'var(--ingredient)'],
+      ['Usuario', 'var(--user)'],
+      ['Alérgeno', 'var(--allergen)'],
+      ['Categoría', 'var(--category)'],
+    ];
+
+    function Section({ num, title, desc, contract, height, children }) {
+      return (
+        <section className="comp">
+          <div className="comp-head">
+            <span className="comp-num">{num}</span>
+            <h2 className="comp-title">{title}</h2>
+          </div>
+          <p className="comp-desc">{desc}</p>
+          <p className="contract">CONTRATO · <b>{contract}</b></p>
+          <div className="frame" style={{ height }}>
+            <div className="frame-bar"><i/><i/><i/><span className="fb-label">{contract}</span></div>
+            {children}
+          </div>
+        </section>
+      );
+    }
+
+    /* --- Demo de primer plano para el Componente 1 ------------------------- */
+    function RecipeDetailDemo() {
+      const data = window.__mockData_1.graphData;
+      const recipe = data.nodes.find(n => n.type === 'Recipe');
+      const ingredients = data.nodes.filter(n => n.type === 'Ingredient');
+      const [hi, setHi] = useState(null);
+      const RecipeGraphBackground = window.RecipeGraphBackground;
+
+      return (
+        <React.Fragment>
+          <RecipeGraphBackground graphData={data} highlightId={hi} />
+          {/* Tarjeta de detalle (primer plano) */}
+          <div className="glass" style={{
+            position: 'absolute', top: 60, left: 28, width: 300, padding: 22,
+            borderRadius: 'var(--r-md)', zIndex: 20,
+          }}>
+            <div style={{
+              height: 120, borderRadius: 12, marginBottom: 16,
+              background: 'linear-gradient(135deg, rgba(245,165,36,0.22), rgba(232,130,90,0.18))',
+              border: '1px solid var(--glass-border)', display: 'grid', placeItems: 'center',
+            }}>
+              <span className="mono" style={{ fontSize: 10, color: 'var(--text-500)' }}>[ foto de receta ]</span>
+            </div>
+            <span className="type-pill" style={{ color: 'var(--recipe)', borderColor: 'var(--recipe)' }}>RECIPE</span>
+            <h3 style={{ margin: '10px 0 4px', fontSize: 21, fontWeight: 700, letterSpacing: '-0.01em' }}>{recipe.label}</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'var(--text-500)' }} className="mono">
+              {ingredients.length} ingredientes · pasá el mouse ↓
+            </p>
+            <div className="rel-tag" style={{ marginBottom: 8 }}>INGREDIENTES</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {ingredients.map((ing) => (
+                <div key={ing.id}
+                  onMouseEnter={() => setHi(ing.id)}
+                  onMouseLeave={() => setHi(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
+                    borderRadius: 10, cursor: 'pointer', transition: 'all 0.18s',
+                    background: hi === ing.id ? 'rgba(185,196,106,0.16)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${hi === ing.id ? 'var(--ingredient)' : 'transparent'}`,
+                  }}>
+                  <span className="dot" style={{
+                    background: 'var(--ingredient)',
+                    boxShadow: hi === ing.id ? '0 0 12px var(--ingredient)' : 'none',
+                  }} />
+                  <span style={{ fontSize: 14, color: 'var(--text-100)' }}>{ing.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </React.Fragment>
+      );
+    }
+
+    function App() {
+      const RecommendationPath = window.RecommendationPath;
+      const AllergyAlert = window.AllergyAlert;
+      const StarMapExplore = window.StarMapExplore;
+
+      return (
+        <div className="wrap">
+          <header>
+            <h1 className="hero-title">Recetario <span className="grad">· Topología de Grafos</span></h1>
+            <p className="hero-sub">
+              Cuatro componentes React para visualizar el grafo de recetas de Neo4j.
+              Cada uno trae su <span className="mono" style={{ color: 'var(--accent)' }}>const mockData</span> expuesto:
+              el backend sólo lo reemplaza por un <span className="mono">fetch()</span>.
+            </p>
+            <div className="legend">
+              {LEGEND.map(([l, c]) => (
+                <span key={l}><span className="dot" style={{ background: c, boxShadow: `0 0 8px ${c}` }} />{l}</span>
+              ))}
+            </div>
+          </header>
+
+          <Section num="01" title="Fondo de Nodos · Recipe Detail"
+            desc="Force-directed graph animado detrás del detalle. La Receta es el nodo central; los Ingredientes orbitan. Pasá el mouse sobre un ingrediente de la tarjeta y su nodo se ilumina en el fondo."
+            contract="graphData: { nodes, links }" height={540}>
+            <RecipeDetailDemo />
+          </Section>
+
+          <Section num="02" title="Explicador de Recomendaciones · Dashboard"
+            desc="Muestra POR QUÉ se recomienda una receta vía filtrado colaborativo, como una ruta del grafo. Un pulso de luz fluye por las flechas; el nodo recomendado late."
+            contract="recommendationPath: { reason, path[] }" height={300}>
+            <div className="center-stage" style={{ position: 'absolute', inset: 0 }}>
+              <RecommendationPath />
+            </div>
+          </Section>
+
+          <Section num="03" title="Alerta de Alergias · Grafo de Conocimiento"
+            desc="Si el perfil del usuario choca con un ingrediente, la tarjeta no sólo avisa: dibuja el mini-grafo del conflicto (Receta → Ingrediente → Alérgeno) para evidenciar el modelado de datos."
+            contract="allergyConflict: { hasConflict, userCondition, conflictPath[] }" height={360}>
+            <div className="center-stage" style={{ position: 'absolute', inset: 0 }}>
+              <AllergyAlert />
+            </div>
+          </Section>
+
+          <Section num="04" title="Mapa Estelar · Browse / Explore"
+            desc="Lienzo arrastrable: las Categorías son soles, las Recetas son planetas que orbitan. Arrastrá para desplazarte, usá la rueda para zoom y hacé click en un planeta para abrir su panel."
+            contract="exploreGraph: { nodes, links }" height={580}>
+            <StarMapExplore />
+          </Section>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
