@@ -1,0 +1,90 @@
+ANÁLISIS DE REQUERIMIENTOS Y ESTADO DE IMPLEMENTACIÓN
+
+A continuación se detalla qué características ya están implementadas, cuáles están parciales y cuáles faltan por desarrollar en la aplicación (frontend y backend).
+
+=========================================
+1. APARTADO: ACTUALIZAR
+=========================================
+
+- Filtro de ingredientes en buscar:
+  [FALTA IMPLEMENTAR]
+  Actualmente el buscador inteligente encuentra recetas basadas estrictamente en la lista de chips agregados ("tengo" y "noQuiero"). Si hay texto en el input sin presionar Enter (sin agregar a la lista), este texto no se considera en la búsqueda de recetas.
+
+- Layout del buscador inteligente:
+  [FALTA IMPLEMENTAR]
+  En el diseño actual, los selectores de categoría, dificultad y tiempo rango están ubicados en la parte superior de la tarjeta (arriba del input de ingredientes). Deben reubicarse al final de la tarjeta, debajo de la lista de ingredientes agregados.
+
+- Número del botón y persistencia de búsqueda:
+  [FALTA IMPLEMENTAR]
+  El botón de búsqueda muestra "Buscar recetas (x)" con la cantidad. Falta quitar ese número. Además, cuando un usuario va al detalle de una receta y luego vuelve a la pantalla de búsqueda, la lista de ingredientes se vacía. Falta persistirlos.
+
+- Tiempo en formato horas y minutos (Receta total):
+  [IMPLEMENTADO]
+  El selector total de tiempo usa el componente "HoursMinutesInput" unificado, no muestra textos que cambien dinámicamente al escribir y se valida correctamente al guardar (al menos 1 minuto, sin decimales ni valores menores a 0).
+
+- Tiempo por pasos (timers):
+  [IMPLEMENTADO]
+  Cada paso cuenta con un timer opcional y se normaliza y valida de la misma forma que el tiempo general al guardar la receta.
+
+- Dropdowns no nativos:
+  [FALTA IMPLEMENTAR]
+  Se utiliza un dropdown personalizado premium en "create.jsx" (para categorías), pero en la pantalla de búsqueda ("SearchScreen") y otros filtros se siguen usando selectores nativos (<select>) del navegador.
+
+- Validación de cantidad de ingredientes:
+  [PARCIALMENTE IMPLEMENTADO]
+  Se utiliza un input type="number", lo cual bloquea letras, pero los navegadores por defecto permiten caracteres como la "e" (exponencial), "+" o "-". Hay que interceptar y bloquear esos caracteres en onKeyDown.
+
+- Normalización de ingrediente al crear:
+  [IMPLEMENTADO]
+  "addIngredient" en "create.jsx" realiza una búsqueda tolerante en la base de datos (insensible a mayúsculas/minúsculas y singular/plural) para asociar el ingrediente existente y evitar duplicados de nodos.
+
+- Configuración por defecto de porciones y tiempo:
+  [PARCIALMENTE IMPLEMENTADO]
+  El tiempo general ya se inicializa vacío y es obligatorio. Sin embargo, las porciones por defecto se inicializan en "4". Deben comenzar vacías o en "1" y requerir validación.
+
+- Remover usuarios demo y dinamizar estadísticas:
+  [FALTA IMPLEMENTAR]
+  Los botones demo siguen presentes en el login. Las estadísticas de recetas y categorías en el footer del login/registro siguen siendo estáticas (hardcodeadas).
+
+- Capitalización de títulos:
+  [IMPLEMENTADO]
+  Se limpia el título de la receta al guardar, pero falta garantizar que siempre se almacene forzando a que la primera letra del título empiece con mayúscula si el usuario lo escribe todo en minúscula.
+
+
+=========================================
+2. APARTADO: NUEVO
+=========================================
+
+- Receta destacada del día:
+  [FALTA IMPLEMENTAR]
+  Falta crear el proceso para calcular qué receta fue la más guardada en favoritos el día anterior, guardar el historial diario en la base de datos y permitir navegar hacia atrás hasta una semana.
+
+- Sistema de usuarios seguidos:
+  [FALTA IMPLEMENTAR]
+  No existe la relación de seguimiento (SIGUE) en la base de datos ni los endpoints en el backend. Falta agregar el feed de recetas de seguidos, y los contadores en "Mi cocina" y en las secciones de recomendación.
+
+- Interacción y recetas terminadas:
+  [FALTA IMPLEMENTAR]
+  El modo de cocina actual ("Cook Mode") no interactúa de forma persistente con la base de datos. Se requiere crear la relación "TERMINO" entre "Usuario" y "Receta", permitir marcar como terminada e incluirlas en la pestaña de "Terminadas" en "Mi cocina".
+
+- Duplicados de nombres de recetas:
+  [FALTA IMPLEMENTAR]
+  La consulta Cypher utiliza MERGE en el título de la receta, lo que sobreescribe la receta existente si coincide el título. Debe modificarse a CREATE y usar IDs únicos para permitir recetas independientes con el mismo nombre.
+
+
+=========================================
+3. IMÁGENES DE RECETAS AUTOMÁTICAS (Google Custom Search API)
+=========================================
+
+- Servicio de búsqueda y endpoint:
+  [FALTA IMPLEMENTAR]
+  Falta integrar las credenciales en el archivo ".env" y crear el servicio "imageSearchService.js" que consuma la API de imágenes para buscar un plato automáticamente en segundo plano cuando se crea una receta.
+
+
+=========================================
+4. IMÁGENES SUGERIDAS AUTOMÁTICAS
+=========================================
+
+- Endpoint de sugerencias y frontend:
+  [FALTA IMPLEMENTAR]
+  Falta el endpoint GET /api/recetas/sugerencias-imagenes en Express para traer 4 imágenes y la UI en "create.jsx" para que el usuario pueda subir su propio archivo o seleccionar una de las 4 imágenes recomendadas en una fila con check.
