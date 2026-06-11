@@ -1,9 +1,19 @@
 /* eslint-disable */
 // Recipe detail — Fase 2B Redesign
 
-const CookMode = ({ steps, onClose, onFinish }) => {
+  const CookMode = ({ steps, onClose, onFinish }) => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [timerOpen, setTimerOpen] = useState(false);
+
+  const changeStep = (newIdxFn) => {
+    if (!document.startViewTransition) {
+      setActiveIdx(newIdxFn);
+      return;
+    }
+    document.startViewTransition(() => {
+      ReactDOM.flushSync(() => setActiveIdx(newIdxFn));
+    });
+  };
   
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -13,7 +23,7 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
-        setActiveIdx(i => {
+        changeStep(i => {
           if (i === steps.length - 1) {
             onClose();
             onFinish();
@@ -24,7 +34,7 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        setActiveIdx(i => Math.max(0, i - 1));
+        changeStep(i => Math.max(0, i - 1));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -58,12 +68,12 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       onClose();
       onFinish();
     } else {
-      setActiveIdx(activeIdx + 1);
+      changeStep(activeIdx + 1);
     }
   };
 
   const handlePrev = () => {
-    if (activeIdx > 0) setActiveIdx(activeIdx - 1);
+    if (activeIdx > 0) changeStep(activeIdx - 1);
   };
 
   return ReactDOM.createPortal(
