@@ -62,8 +62,9 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
     );
   }
 
-  const favRecs = profile.recetasFavoritas.map(t => recetasMap[t]).filter(Boolean);
-  const myRecs = profile.recetasCreadas.map(t => recetasMap[t]).filter(Boolean);
+  const myRecs = profile?.recetasCreadas?.map(id => recetasMap[id]).filter(Boolean) || [];
+  const favRecs = profile?.recetasFavoritas?.map(id => recetasMap[id]).filter(Boolean) || [];
+  const terminadasRecs = profile?.recetasTerminadas?.map(id => recetasMap[id]).filter(Boolean) || [];
 
   return (
     <div data-screen-label="Profile" className="fade-in">
@@ -176,7 +177,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
           <ProfileTab active={tab === 'creadas'} onClick={() => setTab('creadas')} count={myRecs.length}>
             Creadas por mí
           </ProfileTab>
-          <ProfileTab active={tab === 'terminadas'} onClick={() => setTab('terminadas')} count={0}>
+          <ProfileTab active={tab === 'terminadas'} onClick={() => setTab('terminadas')} count={terminadasRecs.length}>
             Terminadas
           </ProfileTab>
         </div>
@@ -249,15 +250,29 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
               ))}
             </div>
           )
-        ) : (
-          <EmptyState
-            icon="check"
-            title="Aún no completaste ninguna receta"
-            action={<Button variant="primary" onClick={() => location.hash = '#browse'}>Encontrar algo para cocinar</Button>}
-          >
-            Usá el Modo Cocina para preparar recetas y van a aparecer acá como completadas.
-          </EmptyState>
-        )}
+        ) : tab === 'terminadas' ? (
+          terminadasRecs.length === 0 ? (
+            <EmptyState
+              icon="check"
+              title="Aún no completaste ninguna receta"
+              action={<Button variant="primary" onClick={() => location.hash = '#browse'}>Encontrar algo para cocinar</Button>}
+            >
+              Usá el Modo Cocina para preparar recetas y van a aparecer acá como completadas.
+            </EmptyState>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {terminadasRecs.map(r => (
+                <RecipeCard
+                  key={r.id}
+                  receta={r}
+                  onOpen={() => onOpenRecipe(r.id)}
+                  isFav={favRecs.some(f => f.id === r.id)}
+                  onFav={() => toggleFav(r.id)}
+                />
+              ))}
+            </div>
+          )
+        ) : null}
       </section>
     </div>
   );

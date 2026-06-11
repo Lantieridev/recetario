@@ -72,11 +72,13 @@ export const obtenerUsuario = async (req, res) => {
             OPTIONAL MATCH (u)-[:GUARDO_FAV]->(f:Receta)
             OPTIONAL MATCH (u)-[:SIGUE]->(sg:Usuario)
             OPTIONAL MATCH (s:Usuario)-[:SIGUE]->(u)
+            OPTIONAL MATCH (u)-[:TERMINO]->(t:Receta)
             RETURN u.nombre AS nombre, u.mail AS mail, 
                    collect(DISTINCT c.id) AS creadas, 
                    collect(DISTINCT f.id) AS favoritas,
                    collect(DISTINCT sg.nombre) AS seguidos,
-                   collect(DISTINCT s.nombre) AS seguidores
+                   collect(DISTINCT s.nombre) AS seguidores,
+                   collect(DISTINCT t.id) AS terminadas
         `;
 
         const result = await session.run(query, { nombre });
@@ -93,7 +95,8 @@ export const obtenerUsuario = async (req, res) => {
                 recetasCreadas: record.get('creadas').filter(id => id !== null),
                 recetasFavoritas: record.get('favoritas').filter(id => id !== null),
                 seguidos: record.get('seguidos').filter(n => n !== null),
-                seguidores: record.get('seguidores').filter(n => n !== null)
+                seguidores: record.get('seguidores').filter(n => n !== null),
+                recetasTerminadas: record.get('terminadas').filter(id => id !== null)
             }
         });
     } catch (error) {
