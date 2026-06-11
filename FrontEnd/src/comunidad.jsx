@@ -88,18 +88,18 @@ const ComunidadScreen = ({ user, onOpenRecipe, onNavigateProfile }) => {
                 <div key={r.titulo} className="fade-in" style={{ breakInside: 'avoid', marginBottom: 24, animationDelay: `${i * 28}ms`, background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--rule)' }}>
                   <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--rule-soft)' }}>
                     <div 
-                      onClick={() => onNavigateProfile?.(r.creador)}
-                      style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => r.creador && onNavigateProfile?.(r.creador)}
+                      style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 'bold', cursor: r.creador ? 'pointer' : 'default' }}
                     >
-                      {r.creador[0].toUpperCase()}
+                      {r.creador ? r.creador[0].toUpperCase() : '?'}
                     </div>
                     <div>
                       <div style={{ fontSize: 14 }}>
                         <strong 
-                          onClick={() => onNavigateProfile?.(r.creador)}
-                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                          onClick={() => r.creador && onNavigateProfile?.(r.creador)}
+                          style={{ cursor: r.creador ? 'pointer' : 'default', textDecoration: r.creador ? 'underline' : 'none' }}
                         >
-                          {r.creador}
+                          {r.creador || 'Anónimo'}
                         </strong> preparó esta receta
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Hace {Math.floor(Math.random() * 20) + 1} horas</div>
