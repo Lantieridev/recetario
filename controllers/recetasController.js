@@ -78,10 +78,10 @@ export const crearReceta = async (req, res) => {
 };
 
 // 2. Asociar Ingrediente a Receta (con propiedad de relación cantidad en CONTIENE)
-// POST /api/recetas/:titulo/ingredientes
+// POST /api/recetas/:id/ingredientes
 // Body: { nombreIngrediente, cantidad }
 export const agregarIngrediente = async (req, res) => {
-    const { titulo } = req.params;
+    const { id } = req.params;
     const { nombreIngrediente, cantidad } = req.body;
 
     if (!nombreIngrediente || !cantidad) {
@@ -91,13 +91,13 @@ export const agregarIngrediente = async (req, res) => {
     const session = getSession();
     try {
         // Verificar que la receta exista
-        const recipeCheck = await session.run('MATCH (r:Receta {titulo: $titulo}) RETURN r', { titulo });
+        const recipeCheck = await session.run('MATCH (r:Receta {id: $id}) RETURN r', { id });
         if (recipeCheck.records.length === 0) {
-            return res.status(404).json({ error: `Receta '${titulo}' no encontrada` });
+            return res.status(404).json({ error: `Receta '${id}' no encontrada` });
         }
 
         const query = `
-            MATCH (r:Receta {titulo: $titulo})
+            MATCH (r:Receta {id: $id})
             WITH r LIMIT 1
             MERGE (i:Ingrediente {nombre: $nombreIngrediente})
             MERGE (r)-[c:CONTIENE]->(i)
@@ -105,7 +105,7 @@ export const agregarIngrediente = async (req, res) => {
             RETURN r.titulo AS receta, i.nombre AS ingrediente, c.cantidad AS cantidad
         `;
 
-        const result = await session.run(query, { titulo, nombreIngrediente, cantidad });
+        const result = await session.run(query, { id, nombreIngrediente, cantidad });
         const record = result.records[0];
 
         res.status(200).json({
