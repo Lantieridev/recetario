@@ -4,6 +4,78 @@ dotenv.config();
 
 // Mapeo inteligente de palabras clave para fallback estético de Unsplash
 const FALLBACK_CATEGORIES = {
+    flan: {
+        keywords: ['flan'],
+        images: [
+            'https://upload.wikimedia.org/wikipedia/commons/5/5e/Flan_con_dulce_de_leche_y_crema.jpg',
+            'https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    noquis: {
+        keywords: ['ñoqui', 'noqui'],
+        images: [
+            'https://upload.wikimedia.org/wikipedia/commons/d/d5/Plato_de_%C3%B1oquis_argentinos_con_salsa_de_carne_y_tomate_con_queso_rallado.jpg',
+            'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    lentejas: {
+        keywords: ['lentejas'],
+        images: [
+            'https://images.unsplash.com/photo-1579640873954-766bf0235bf3?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1721942893918-214eae0cac20?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1621179816782-1c39a6583fbc?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1621179817588-f4a923daa3ef?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    verdeo: {
+        keywords: ['verdeo'],
+        images: [
+            'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1606728035253-49e812177c9e?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    comida_rapida: {
+        keywords: ['comida rapida', 'comida rápida', 'hamburguesa', 'taco', 'fast food', 'burger', 'paty'],
+        images: [
+            'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    bebidas: {
+        keywords: ['bebidas', 'bebida', 'trago', 'negroni', 'fernet', 'coctel', 'cóctel', 'cocktail', 'cola'],
+        images: [
+            'https://images.unsplash.com/photo-1609951651556-5334e2706168?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1620165479836-f68bc54e19d2?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    panaderia: {
+        keywords: ['panadería', 'panaderia', 'pan', 'medialuna', 'croissant', 'factura', 'facturas', 'bizcocho', 'masa madre'],
+        images: [
+            'https://images.unsplash.com/photo-1623334044303-241021148842?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1599940778173-e276d4acb2bb?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1681218079567-35aef7c8e7e4?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
+    minutas: {
+        keywords: ['minutas', 'minuta', 'milanesa', 'empanada', 'papas fritas'],
+        images: [
+            'https://images.unsplash.com/photo-1599921841143-819065a55cc6?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1608039783021-6116a558f0c5?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1624128082323-beb6b8b508db?w=600&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1560611588-163f295eb145?w=600&auto=format&fit=crop&q=60'
+        ]
+    },
     chocotorta: {
         keywords: ['chocotorta'],
         images: [
@@ -31,6 +103,12 @@ const FALLBACK_CATEGORIES = {
             'https://images.unsplash.com/photo-1594610352113-ad218529cfb7?w=600&auto=format&fit=crop&q=60'
         ]
     },
+    fernet: {
+        keywords: ['fernet', 'fernet con cola', 'fernet con coca'],
+        images: [
+            'https://upload.wikimedia.org/wikipedia/commons/b/b0/Fernet_con_coca.jpg'
+        ]
+    },
     locro: {
         keywords: ['locro'],
         images: [
@@ -43,10 +121,10 @@ const FALLBACK_CATEGORIES = {
     lomito: {
         keywords: ['lomito'],
         images: [
+            'https://upload.wikimedia.org/wikipedia/commons/f/fd/Lomito_de_Mendoza.jpg',
             'https://images.unsplash.com/photo-1554433607-66b5efe9d304?w=600&auto=format&fit=crop&q=60',
             'https://images.unsplash.com/photo-1700937314577-898450cafe35?w=600&auto=format&fit=crop&q=60',
-            'https://images.unsplash.com/photo-1712746784291-e29d5d2694d4?w=600&auto=format&fit=crop&q=60',
-            'https://images.unsplash.com/photo-1699728088600-6d684acbeada?w=600&auto=format&fit=crop&q=60'
+            'https://images.unsplash.com/photo-1712746784291-e29d5d2694d4?w=600&auto=format&fit=crop&q=60'
         ]
     },
     asado: {
@@ -59,7 +137,7 @@ const FALLBACK_CATEGORIES = {
         ]
     },
     postres: {
-        keywords: ['postre', 'flan', 'torta', 'chocolate', 'dulce', 'helado', 'vainilla', 'caramelo', 'frutilla', 'manzana', 'banana', 'limon', 'lemon', 'coco', 'pastelera', 'budin', 'magdalena', 'muffin', 'galletita', 'cookie', 'alfajor', 'factura', 'medialuna', 'waffle', 'panqueque', 'crepa', 'mousse', 'tiramisu', 'cheesecake', 'brownie'],
+        keywords: ['postre', 'torta', 'chocolate', 'dulce', 'helado', 'vainilla', 'caramelo', 'frutilla', 'manzana', 'banana', 'limon', 'lemon', 'coco', 'pastelera', 'budin', 'magdalena', 'muffin', 'galletita', 'cookie', 'alfajor', 'factura', 'medialuna', 'waffle', 'panqueque', 'crepa', 'mousse', 'tiramisu', 'cheesecake', 'brownie'],
         images: [
             'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=600&auto=format&fit=crop&q=60',
             'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=60',
@@ -68,7 +146,7 @@ const FALLBACK_CATEGORIES = {
         ]
     },
     pastas: {
-        keywords: ['fideo', 'tallarin', 'ñoqui', 'pasta', 'lasagn', 'lasañ', 'spaghetti', 'espagueti', 'canelon', 'sorrentin', 'capelet', 'tartelet'],
+        keywords: ['fideo', 'tallarin', 'pasta', 'lasagn', 'lasañ', 'spaghetti', 'espagueti', 'canelon', 'sorrentin', 'capelet', 'tartelet'],
         images: [
             'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=600&auto=format&fit=crop&q=60',
             'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=60',
@@ -104,7 +182,7 @@ const FALLBACK_CATEGORIES = {
         ]
     },
     carnes: {
-        keywords: ['pollo', 'carne', 'milanesa', 'guiso', 'verdeo', 'bife', 'cerdo', 'lentejas', 'estofado', 'carbonada', 'churrasco', 'pechuga', 'patita', 'alita', 'costilla', 'matambre', 'peceto', 'vacio', 'entraña', 'bacon', 'panceta', 'salchicha', 'chorizo', 'morcilla', 'brochette'],
+        keywords: ['pollo', 'carne', 'milanesa', 'guiso', 'bife', 'cerdo', 'estofado', 'carbonada', 'churrasco', 'pechuga', 'patita', 'alita', 'costilla', 'matambre', 'peceto', 'vacio', 'entraña', 'bacon', 'panceta', 'salchicha', 'chorizo', 'morcilla', 'brochette'],
         images: [
             'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&auto=format&fit=crop&q=60',
             'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=60',

@@ -1,6 +1,6 @@
 /* Seed data — replicates poblar_recetario.cypher exactly so the front works standalone. */
 window.SEED = (() => {
-  const categorias = ['SIN TACC', 'Vegetariano', 'Vegano', 'Pastas', 'Postre'];
+  const categorias = ['SIN TACC', 'Vegetariano', 'Vegano', 'Pastas', 'Postre', 'Comida rápida', 'Bebidas', 'Carnes', 'Minutas', 'Panadería'];
 
   const usuarios = [
     { nombre: 'Ornella', mail: 'ornella@mail.com', contrasena: 'pass123' },

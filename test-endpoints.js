@@ -71,6 +71,7 @@ async function runTests() {
                     descripcion: 'Riquísimo pollo al verdeo con crema',
                     dificultad: 'Media',
                     tiempo: '35 min',
+                    imagen: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=800&auto=format&fit=crop&q=60',
                     pasos: '1. Cortar el pollo. 2. Saltear con verdeo. 3. Agregar crema.',
                     creador: 'Carlos',
                     categoria: 'SIN TACC'
