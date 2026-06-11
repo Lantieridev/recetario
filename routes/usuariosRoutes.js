@@ -9,7 +9,7 @@ import {
     seguirUsuario,
     dejarDeSeguirUsuario,
     obtenerComunidad,
-    registrarHistorial,
+    registrarTerminada,
     obtenerExplicacionRecomendacion,
     obtenerUsuarioStatus
 } from '../controllers/usuariosController.js';
@@ -26,7 +26,8 @@ router.get('/:nombre', obtenerUsuario);
 router.post('/:nombre/favoritos/toggle', toggleFavorito);
 router.post('/:nombre/favoritos', agregarFavorito);
 router.post('/:nombre/seguir', seguirUsuario);
+router.post('/:nombre/seguir', seguirUsuario);
 router.post('/:nombre/dejardeseguir', dejarDeSeguirUsuario);
-router.post('/:nombre/historial', registrarHistorial);
+router.post('/:nombre/terminar', registrarTerminada);
 
 export default router;

@@ -143,9 +143,9 @@
     return handleResponse(res);
   };
 
-  api.registrarHistorial = async (nombre, recetaId) => {
+  api.registrarTerminada = async (nombre, recetaId) => {
     await delay();
-    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/historial`, {
+    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/terminar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ recetaId })

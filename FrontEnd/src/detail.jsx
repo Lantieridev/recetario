@@ -182,7 +182,7 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
 
   const handleFinishCookMode = async () => {
     try {
-      await window.api.registrarHistorial(user.nombre, id);
+      await window.api.registrarTerminada(user.nombre, id);
       toast('¡Receta terminada! Guardada en tu historial.', { icon: 'sparkle' });
     } catch (e) {
       toast('Error al registrar historial.');
