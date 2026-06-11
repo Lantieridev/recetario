@@ -391,30 +391,6 @@ const AuthScreen = ({ onAuth }) => {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <button
                   type="button"
-                  onClick={() => quickLogin('Ornella')}
-                  className="chip focus-ring"
-                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
-                >
-                  🍳 Ornella
-                </button>
-                <button
-                  type="button"
-                  onClick={() => quickLogin('Juan')}
-                  className="chip focus-ring"
-                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
-                >
-                  🥗 Juan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => quickLogin('Ana')}
-                  className="chip focus-ring"
-                  style={{ background: 'var(--paper)', borderColor: 'var(--rule)', padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
-                >
-                  🍰 Ana
-                </button>
-                <button
-                  type="button"
                   onClick={() => quickLogin('Admin')}
                   className="chip focus-ring"
                   style={{
