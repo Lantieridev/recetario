@@ -489,6 +489,9 @@ const RecommendationCard = ({ rec, isFav, onOpen, onFav }) => {
       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.transform = ''; }}
     >
+      <div style={{ position: 'relative', height: 160, margin: '-16px -16px 0 -16px', overflow: 'hidden', borderRadius: 'calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0' }}>
+        <CleanRecipeImage titulo={rec.receta} categoria={rec.categoria} imagenUrl={rec.imagen} height={160} />
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', justifySpace: 'space-between', justifyContent: 'space-between' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -510,6 +513,8 @@ const RecommendationCard = ({ rec, isFav, onOpen, onFav }) => {
             color: isFav ? 'var(--accent)' : 'var(--ink-3)',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             transition: 'color .15s',
+            background: 'transparent',
+            border: 'none',
           }}
         >
           <Icon name={isFav ? 'bookmarkFilled' : 'bookmark'} size={14}/>
