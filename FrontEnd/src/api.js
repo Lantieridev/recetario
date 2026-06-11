@@ -86,6 +86,12 @@
     return result;
   };
 
+  api.obtenerSugerenciasImagenes = async (query) => {
+    await delay();
+    const res = await fetch(`/api/recetas/sugerencias-imagenes?query=${encodeURIComponent(query)}`);
+    return handleResponse(res);
+  };
+
   api.agregarIngrediente = async (titulo, data) => {
     await delay(50);
     const res = await fetch(`/api/recetas/${encodeURIComponent(titulo)}/ingredientes`, {

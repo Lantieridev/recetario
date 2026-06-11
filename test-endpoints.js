@@ -170,6 +170,13 @@ async function runTests() {
             console.log('Status:', res17.status);
             console.log('Respuesta Status:', JSON.stringify(res17.data));
 
+            // 18. Endpoint (Bloque 6): Sugerencias de imágenes (GET /api/recetas/sugerencias-imagenes)
+            console.log('\n18. Probando: Sugerencias de imágenes (Google / Fallback)...');
+            const res18 = await request('/api/recetas/sugerencias-imagenes?query=Pizza');
+            console.log('Status:', res18.status);
+            console.log('Sugerencias devueltas:', res18.data.sugerencias ? res18.data.sugerencias.length : 0);
+            console.log('Respuesta:', JSON.stringify(res18.data));
+
 
             console.log('\n--- PRUEBAS FINALIZADAS ---');
         } catch (error) {

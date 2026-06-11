@@ -349,6 +349,82 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
   const [suggested, setSuggested] = useState([]);
   const toast = useToast();
 
+  const [customImageUploaded, setCustomImageUploaded] = useState(false);
+  const [imageSuggestions, setImageSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState('');
+  const [lastFetchedTitle, setLastFetchedTitle] = useState('');
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const MAX_WIDTH = 800;
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        setForm(prev => ({ ...prev, imagenUrl: base64 }));
+        setCustomImageUploaded(true);
+        setImageSuggestions([]);
+        setSelectedSuggestion('');
+        toast('Imagen subida y optimizada ✓');
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeUploadedImage = () => {
+    setForm(prev => ({ ...prev, imagenUrl: '' }));
+    setCustomImageUploaded(false);
+    setImageSuggestions([]);
+    setSelectedSuggestion('');
+    setLastFetchedTitle('');
+  };
+
+  const handleTitleBlur = async (e) => {
+    e.target.style.borderColor = allErrors.titulo ? 'rgba(224,122,69,.6)' : 'rgba(255,255,255,.12)';
+
+    const cleanTitle = form.titulo.trim();
+    if (cleanTitle.length >= 3 && !customImageUploaded && cleanTitle !== lastFetchedTitle) {
+      setLoadingSuggestions(true);
+      setImageSuggestions([]);
+      setSelectedSuggestion('');
+      setLastFetchedTitle(cleanTitle);
+      try {
+        const res = await window.api.obtenerSugerenciasImagenes(cleanTitle);
+        if (res && res.sugerencias) {
+          // Filtrar duplicados
+          const uniqueUrls = [...new Set(res.sugerencias)];
+          setImageSuggestions(uniqueUrls);
+        }
+      } catch (err) {
+        console.error('Error al obtener sugerencias de imágenes:', err);
+        toast('No se pudieron cargar sugerencias de imágenes');
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }
+  };
+
   useEffect(() => { setSuggested(window.api.todosIngredientes()); }, []);
 
   const cats = window.api.categorias();
@@ -540,7 +616,7 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
             value={form.titulo}
             onChange={(e) => setForm({ ...form, titulo: e.target.value })}
             onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
-            onBlur={(e) => e.target.style.borderColor = allErrors.titulo ? 'rgba(224,122,69,.6)' : 'rgba(255,255,255,.12)'}
+            onBlur={handleTitleBlur}
           />
           {allErrors.titulo && (
             <div style={{ fontSize: 13, color: 'var(--accent-2)', marginTop: 8 }}>⚠ {allErrors.titulo}</div>
@@ -696,25 +772,161 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
               {/* ── 3. Imagen ── */}
               <section>
-                <SectionHeader number="3" title="Imagen" subtitle="Una foto que entre por los ojos (opcional)" />
-                <div
-                  style={{ border: '2px dashed var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px', textAlign: 'center', background: 'var(--paper-2)', cursor: 'pointer', transition: 'border-color .2s, background .2s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--paper)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--rule)'; e.currentTarget.style.background = 'var(--paper-2)'; }}
-                >
-                  {form.imagenUrl ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                      <img src={form.imagenUrl} style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover', boxShadow: 'var(--shadow-md)' }} />
-                      <span style={{ fontSize: 15, color: 'var(--ink)' }}>Imagen seleccionada</span>
+                <SectionHeader number="3" title="Imagen" subtitle="Sube una foto o selecciona una sugerida automáticamente" />
+                
+                <input 
+                  type="file" 
+                  id="recipe-image-upload" 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                  onChange={handleFileChange} 
+                />
+
+                {/* Área de subida / visualización */}
+                {customImageUploaded ? (
+                  <div style={{ 
+                    border: '1.5px solid var(--rule)', 
+                    borderRadius: 'var(--radius-lg)', 
+                    padding: '24px', 
+                    background: 'var(--paper)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 16
+                  }}>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: 320, height: 200, borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-md)' }}>
+                      <img src={form.imagenUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(126,148,96,.9)', color: '#fff', fontSize: 11, padding: '4px 8px', borderRadius: 99, fontWeight: 600 }}>
+                        FOTO SUBIDA (OPTIMIZADA)
+                      </div>
                     </div>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 28, marginBottom: 10, opacity: 0.35 }}>🖼</div>
-                      <div style={{ fontSize: 15, color: 'var(--ink-3)', fontWeight: 500 }}>Subir imagen</div>
-                      <div style={{ fontSize: 13, color: 'var(--ink-4)', marginTop: 4 }}>Función próximamente disponible</div>
-                    </>
-                  )}
-                </div>
+                    <button 
+                      type="button" 
+                      onClick={removeUploadedImage} 
+                      className="btn btn-ghost btn-sm" 
+                      style={{ color: 'var(--accent)', gap: 6 }}
+                    >
+                      <Icon name="trash" size={13} /> Eliminar foto y buscar sugerencias
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Caja de subida clickeable */}
+                    <div
+                      onClick={() => document.getElementById('recipe-image-upload').click()}
+                      style={{ 
+                        border: '2.5px dashed var(--rule)', 
+                        borderRadius: 'var(--radius-lg)', 
+                        padding: '36px 20px', 
+                        textAlign: 'center', 
+                        background: 'var(--paper-2)', 
+                        cursor: 'pointer', 
+                        transition: 'all .25s ease' 
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--paper)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--rule)'; e.currentTarget.style.background = 'var(--paper-2)'; }}
+                    >
+                      <div style={{ fontSize: 32, marginBottom: 12, filter: 'grayscale(0.3)' }}>📸</div>
+                      <div style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 600 }}>Cargar foto propia</div>
+                      <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>Desde tu galería o cámara (se optimizará automáticamente)</div>
+                    </div>
+
+                    {/* Loader de Sugerencias */}
+                    {loadingSuggestions && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="spinner-small" style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'btn-spin 0.8s linear infinite' }}></span>
+                          Buscando sugerencias de imágenes...
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                          {[1, 2, 3, 4].map(n => (
+                            <div key={n} className="skeleton" style={{ height: 100 }} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mostrar Sugerencias */}
+                    {imageSuggestions.length > 0 && !loadingSuggestions && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+                          Sugerencias automáticas para: <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', textTransform: 'none', color: 'var(--ink)', fontSize: 14 }}>"{lastFetchedTitle}"</span>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                          {imageSuggestions.map((url, idx) => {
+                            const isSelected = selectedSuggestion === url || form.imagenUrl === url;
+                            return (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setForm(prev => ({ ...prev, imagenUrl: '' }));
+                                    setSelectedSuggestion('');
+                                  } else {
+                                    setForm(prev => ({ ...prev, imagenUrl: url }));
+                                    setSelectedSuggestion(url);
+                                    toast('Imagen de sugerencia seleccionada ✓');
+                                  }
+                                }}
+                                style={{
+                                  position: 'relative',
+                                  height: 100,
+                                  borderRadius: 'var(--radius)',
+                                  overflow: 'hidden',
+                                  border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--rule)'}`,
+                                  boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
+                                  cursor: 'pointer',
+                                  transition: 'all .25s ease',
+                                  transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                }}
+                                onMouseEnter={(e) => { if(!isSelected) e.currentTarget.style.borderColor = 'var(--ink-3)'; }}
+                                onMouseLeave={(e) => { if(!isSelected) e.currentTarget.style.borderColor = 'var(--rule)'; }}
+                              >
+                                <img 
+                                  src={url} 
+                                  onError={() => {
+                                    console.warn(`[ImageError] Falla al cargar sugerencia: ${url}`);
+                                    setImageSuggestions(prev => prev.filter(u => u !== url));
+                                    if (selectedSuggestion === url) {
+                                      setSelectedSuggestion('');
+                                      setForm(prev => ({ ...prev, imagenUrl: '' }));
+                                    }
+                                  }}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                />
+                                
+                                {/* Overlay / Checkmark */}
+                                {isSelected && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(126,148,96, 0.25)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <div style={{
+                                      width: 22, height: 22, borderRadius: '50%',
+                                      background: 'var(--accent)', color: '#fff',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      fontSize: 12, fontWeight: 'bold', boxShadow: 'var(--shadow-sm)'
+                                    }}>
+                                      ✓
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-4)' }}>
+                          * Haz clic en una foto para seleccionarla. Si no seleccionas ninguna, la receta se creará sin imagen.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
               <Divider />
