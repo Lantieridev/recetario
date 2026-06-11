@@ -198,12 +198,16 @@ const App = () => {
   // View transitions navigation
   const navigate = useCallback((newRoute) => {
     if (!document.startViewTransition) {
-      setRoute(newRoute);
+      ReactDOM.flushSync(() => {
+        setRoute(newRoute);
+        window.scrollTo(0, 0);
+      });
       return;
     }
     document.startViewTransition(() => {
       ReactDOM.flushSync(() => {
         setRoute(newRoute);
+        window.scrollTo(0, 0);
       });
     });
   }, []);
