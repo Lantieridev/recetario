@@ -553,17 +553,18 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         imagen: form.imagenUrl || null
       };
 
-      await window.api.crearReceta(payload);
+      const createdRecipeRes = await window.api.crearReceta(payload);
+      const recipeId = createdRecipeRes.receta.id;
 
       for (const ing of form.ingredientes) {
-        await window.api.agregarIngrediente(capitalizedTitulo, {
+        await window.api.agregarIngrediente(recipeId, {
           nombreIngrediente: ing.nombre,
           cantidad: ing.cantidadDisplay || ing.cantidad,
         });
       }
 
       toast('¡Receta publicada!');
-      setTimeout(() => onCreated(capitalizedTitulo), 1100);
+      setTimeout(() => onCreated(recipeId, payload), 1100);
     } catch (err) {
       setError(err.error || 'No pudimos guardar la receta');
     } finally {
