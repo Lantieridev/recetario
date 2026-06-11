@@ -15,6 +15,13 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
 
+  // Retail State
+  const [retailTab, setRetailTab] = useState('conversion'); // 'conversion' | 'brands'
+  const [retailStats, setRetailStats] = useState(null);
+  const [retailStatsLoading, setRetailStatsLoading] = useState(false);
+  const [retailBrands, setRetailBrands] = useState([]);
+  const [retailBrandsLoading, setRetailBrandsLoading] = useState(false);
+
   const COMPANIES = {
     'HELLMANNS-1234': { nombre: 'Hellmann\'s', tier: 'BRAND', desc: 'Marca proveedora de alimentos. Acceso a subastas de ingredientes (Graph Bidding).' },
     'CARREFOUR-5678': { nombre: 'Carrefour', tier: 'RETAIL', desc: 'Comercio minorista / distribuidor de alimentos. Acceso a Liquidación de Stock (Stock Clearance).' },
@@ -73,6 +80,48 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
       initializedRef.current = true;
     }
   }, [allIngredients]);
+
+  // Fetch Retail Data
+  useEffect(() => {
+    if (activeCompany.tier === 'RETAIL') {
+      if (retailTab === 'conversion') {
+        setRetailStatsLoading(true);
+        window.api.b2bRetailConversions({ apiKey: selectedApiKey })
+          .then(res => {
+            setRetailStats(res);
+            setRetailStatsLoading(false);
+          })
+          .catch(err => {
+            console.error('Error al cargar métricas de retail:', err);
+            setRetailStatsLoading(false);
+          });
+      } else if (retailTab === 'brands') {
+        setRetailBrandsLoading(true);
+        window.api.b2bRetailBrands({ apiKey: selectedApiKey })
+          .then(res => {
+            setRetailBrands(res.brands || []);
+            setRetailBrandsLoading(false);
+          })
+          .catch(err => {
+            console.error('Error al cargar marcas de retail:', err);
+            setRetailBrandsLoading(false);
+          });
+      }
+    }
+  }, [selectedApiKey, retailTab]);
+
+  const handleToggleBrand = async (brandNombre) => {
+    try {
+      // Optimistic update
+      setRetailBrands(prev => prev.map(b => b.nombre === brandNombre ? { ...b, distribuido: !b.distribuido } : b));
+      await window.api.b2bRetailToggleBrand({ apiKey: selectedApiKey, brandNombre });
+    } catch (err) {
+      console.error('Error al toggle de marca:', err);
+      // Revert
+      window.api.b2bRetailBrands({ apiKey: selectedApiKey })
+        .then(res => setRetailBrands(res.brands || []));
+    }
+  };
 
   const handleBidding = async (e) => {
     e.preventDefault();
@@ -205,8 +254,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
               </div>
             </div>
 
-            {/* Quick explanation of effect */}
-            {(activeCompany.tier === 'BRAND' || activeCompany.tier === 'RETAIL') && (
+            {activeCompany.tier === 'BRAND' && (
               <div style={{ background: 'rgba(184, 64, 31, 0.04)', border: '1px solid rgba(184, 64, 31, 0.15)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
                 <h4 className="font-display" style={{ fontSize: 18, margin: '0 0 10px', color: 'var(--accent)' }}>¿Cómo verificar el impacto?</h4>
                 <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 16px' }}>
@@ -223,6 +271,18 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                 >
                   Ir al Buscador Inteligente
                 </button>
+              </div>
+            )}
+
+            {activeCompany.tier === 'RETAIL' && (
+              <div style={{ background: 'rgba(184, 64, 31, 0.04)', border: '1px solid rgba(184, 64, 31, 0.15)', borderRadius: 'var(--radius-xl)', padding: 24 }}>
+                <h4 className="font-display" style={{ fontSize: 18, margin: '0 0 10px', color: 'var(--accent)' }}>¿Cómo verificar las compras?</h4>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+                  1. Seleccioná qué marcas vende tu tienda en la pestaña <strong>Catálogo de Marcas</strong>.<br/>
+                  2. Iniciá sesión como cocinero normal, abrí una receta y haz clic en <strong>🛒 Pedir ingredientes</strong>.<br/>
+                  3. El sistema buscará sugerir productos de tus marcas distribuidas en lugar de genéricos.<br/>
+                  4. Confirmá el checkout simulado y verás las analíticas de ventas actualizarse en esta consola.
+                </p>
               </div>
             )}
           </div>
@@ -244,8 +304,8 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
               </div>
             </div>
 
-            {/* If Brand or Retailer, show Bidding / Clearance Form */}
-            {(activeCompany.tier === 'BRAND' || activeCompany.tier === 'RETAIL') && (
+            {/* If Brand, show Bidding Form */}
+            {activeCompany.tier === 'BRAND' && (
               <form onSubmit={handleBidding} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
                   <div className="field" style={{ position: 'relative' }}>
@@ -320,7 +380,7 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                     loading={loading}
                     style={{ flex: 1, height: 48 }}
                   >
-                    Enviar Oferta B2B ({activeCompany.tier === 'BRAND' ? 'Bidding' : 'Stock Clearance'})
+                    Enviar Oferta Bidding B2B
                   </Button>
                 </div>
 
@@ -367,6 +427,150 @@ const B2BPortalScreen = ({ user, onNavigateToSearch }) => {
                   </div>
                 )}
               </form>
+            )}
+
+            {/* If Retail, show Conversions & Brand Catalog */}
+            {activeCompany.tier === 'RETAIL' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {/* Tab switcher */}
+                <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 999, width: 'fit-content' }}>
+                  <button
+                    type="button"
+                    style={{
+                      borderRadius: 999, height: 32, fontSize: 13, fontWeight: 500, padding: '0 16px',
+                      background: retailTab === 'conversion' ? 'var(--ink)' : 'transparent',
+                      color: retailTab === 'conversion' ? 'var(--paper)' : 'var(--ink-2)',
+                      transition: 'all .18s', border: 'none', cursor: 'pointer'
+                    }}
+                    onClick={() => setRetailTab('conversion')}
+                  >
+                    Métricas de Conversión
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      borderRadius: 999, height: 32, fontSize: 13, fontWeight: 500, padding: '0 16px',
+                      background: retailTab === 'brands' ? 'var(--ink)' : 'transparent',
+                      color: retailTab === 'brands' ? 'var(--paper)' : 'var(--ink-2)',
+                      transition: 'all .18s', border: 'none', cursor: 'pointer'
+                    }}
+                    onClick={() => setRetailTab('brands')}
+                  >
+                    Catálogo de Marcas
+                  </button>
+                </div>
+
+                {retailTab === 'conversion' ? (
+                  retailStatsLoading ? (
+                    <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                      Cargando métricas de conversión...
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                      {/* Grid KPIs */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div style={{ background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: 18 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Ventas Totales</div>
+                          <div className="font-display" style={{ fontSize: 26, color: 'var(--cat-veg)' }}>${retailStats?.totalIngresos || 0}</div>
+                        </div>
+                        <div style={{ background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: 18 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Ticket Promedio</div>
+                          <div className="font-display" style={{ fontSize: 26, color: 'var(--ink)' }}>${retailStats?.ticketPromedio || 0}</div>
+                        </div>
+                        <div style={{ background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: 18 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Pedidos Completados</div>
+                          <div className="font-display" style={{ fontSize: 26, color: 'var(--ink)' }}>{retailStats?.totalCompras || 0}</div>
+                        </div>
+                        <div style={{ background: 'var(--cream)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: 18 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Tasa de Conversión</div>
+                          <div className="font-display" style={{ fontSize: 26, color: 'var(--accent)' }}>{retailStats?.tasaConversion || 0}%</div>
+                        </div>
+                      </div>
+
+                      {/* Detail section */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
+                        {/* Pedidos */}
+                        <div>
+                          <h4 className="font-display" style={{ fontSize: 16, margin: '0 0 12px' }}>Historial de Pedidos</h4>
+                          {!retailStats || retailStats.compras.length === 0 ? (
+                            <div style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--ink-3)' }}>Aún no se registran compras.</div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                              {retailStats.compras.map(c => (
+                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--paper-2)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--rule-soft)' }}>
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 600 }}>{c.fecha}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{c.itemsCount} productos</div>
+                                  </div>
+                                  <div style={{ fontWeight: 600, fontSize: 14 }}>${c.monto}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Marcas más vendidas */}
+                        <div>
+                          <h4 className="font-display" style={{ fontSize: 16, margin: '0 0 12px' }}>Afinidad de Marcas</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {!retailStats || retailStats.marcasRanking.length === 0 ? (
+                              <div style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--ink-3)' }}>Sin datos de marcas asociadas.</div>
+                            ) : (
+                              retailStats.marcasRanking.map(m => (
+                                <div key={m.nombre} style={{ display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--paper-2)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--rule-soft)' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <strong style={{ fontWeight: 600 }}>{m.nombre}</strong>
+                                    <span style={{ color: 'var(--ink-3)' }}>{m.ventas} ventas</span>
+                                  </div>
+                                  <div style={{ width: '100%', height: 4, background: 'var(--rule)', borderRadius: 2, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${(m.ventas / (retailStats.totalCompras || 1)) * 100}%`, background: 'var(--accent)' }} />
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  retailBrandsLoading ? (
+                    <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                      Cargando catálogo de marcas...
+                    </div>
+                  ) : (
+                    <div>
+                      <h4 className="font-display" style={{ fontSize: 16, margin: '0 0 8px' }}>Marcas Distribuidas</h4>
+                      <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+                        Seleccioná qué marcas comerciales vende tu tienda. Al activarlas, sugeriremos sus productos patrocinados en las canastas de los usuarios.
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {retailBrands.map(brand => (
+                          <label key={brand.nombre} style={{
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                            background: 'var(--paper-2)', border: '1px solid var(--rule-soft)',
+                            borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'background-color .15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--rule-soft)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'var(--paper-2)'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!brand.distribuido}
+                              onChange={() => handleToggleBrand(brand.nombre)}
+                              style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--accent)' }}
+                            />
+                            <div>
+                              <strong style={{ fontSize: 14, color: 'var(--ink)' }}>{brand.nombre}</strong>
+                              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{brand.dominio}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
             )}
 
             {/* If Enterprise, show Predictive Analytics Console */}

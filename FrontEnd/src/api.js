@@ -209,6 +209,58 @@
     return handleResponse(res);
   };
 
+  api.b2bRetailBrands = async ({ apiKey }) => {
+    await delay();
+    const res = await fetch('/api/b2b/retail/brands', {
+      headers: { 
+        'X-USER-EMAIL': apiKey,
+        'X-API-KEY': apiKey
+      }
+    });
+    return handleResponse(res);
+  };
+
+  api.b2bRetailToggleBrand = async ({ apiKey, brandNombre }) => {
+    await delay();
+    const res = await fetch('/api/b2b/retail/brands/toggle', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-USER-EMAIL': apiKey,
+        'X-API-KEY': apiKey
+      },
+      body: JSON.stringify({ brandNombre })
+    });
+    return handleResponse(res);
+  };
+
+  api.b2bRetailConversions = async ({ apiKey }) => {
+    await delay();
+    const res = await fetch('/api/b2b/analytics/retail-conversions', {
+      headers: { 
+        'X-USER-EMAIL': apiKey,
+        'X-API-KEY': apiKey
+      }
+    });
+    return handleResponse(res);
+  };
+
+  api.retailCheckout = async ({ retailerNombre, monto, itemsCount }) => {
+    await delay();
+    const res = await fetch('/api/b2b/retail/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ retailerNombre, monto, itemsCount })
+    });
+    return handleResponse(res);
+  };
+
+  api.retailResolveCart = async ({ retailer, ingredientes = [] }) => {
+    await delay();
+    const res = await fetch(`/api/b2b/retail/resolve-cart?retailer=${encodeURIComponent(retailer)}&ingredientes=${encodeURIComponent(ingredientes.join(','))}`);
+    return handleResponse(res);
+  };
+
   api.seguirUsuario = async (creador, seguidor) => {
     await delay();
     const res = await fetch(`/api/usuarios/${encodeURIComponent(seguidor)}/seguir`, {
