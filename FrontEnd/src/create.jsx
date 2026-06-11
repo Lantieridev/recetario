@@ -584,9 +584,9 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 52 }}>
 
-              {/* ── 1. Identidad ── */}
+              {/* ── 1. Título ── */}
               <section>
-                <SectionHeader number="1" title="Identidad" subtitle="Nombre, descripción, categoría y dificultad" />
+                <SectionHeader number="1" title="Título" subtitle="Descripción, categoría y dificultad" />
 
                 {/* Descripcion */}
                 <div className="field" style={{ marginBottom: 28 }}>
