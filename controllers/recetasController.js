@@ -140,7 +140,7 @@ export const listarRecetas = async (req, res) => {
               AND ($tiempo IS NULL OR r.tiempo = $tiempo)
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
-            RETURN DISTINCT r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
+            RETURN DISTINCT r.id AS id, r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
         `;
 
         const result = await session.run(query, {
@@ -150,6 +150,7 @@ export const listarRecetas = async (req, res) => {
         });
 
         const recetas = result.records.map(record => ({
+            id: record.get('id'),
             titulo: record.get('titulo'),
             descripcion: record.get('descripcion'),
             dificultad: record.get('dificultad'),
@@ -240,7 +241,8 @@ export const buscarRecetas = async (req, res) => {
                 RETURN collect(DISTINCT p.nombre) AS IngredientesPatrocinados, sum(coalesce(p.pesoPatrocinio, 0)) AS ScorePatrocinio
             }
             
-            RETURN r.titulo AS Receta,
+            RETURN r.id AS id,
+                   r.titulo AS Receta,
                    r.dificultad AS Dificultad,
                    r.tiempo AS Tiempo,
                    c.nombre AS Categoria,
@@ -271,6 +273,7 @@ export const buscarRecetas = async (req, res) => {
             const ingPatrocinados = record.get('IngredientesPatrocinados') || [];
 
             return {
+                id: record.get('id'),
                 receta: record.get('Receta'),
                 dificultad: record.get('Dificultad'),
                 tiempo: formatDuration(record.get('Tiempo')),
@@ -297,13 +300,13 @@ export const buscarRecetas = async (req, res) => {
 };
 
 // 5. Obtener Detalle de Receta
-// GET /api/recetas/:titulo
+// GET /api/recetas/:id
 export const obtenerReceta = async (req, res) => {
-    const { titulo } = req.params;
+    const { id } = req.params;
     const session = getSession();
     try {
         const query = `
-            MATCH (r:Receta {titulo: $titulo})
+            MATCH (r:Receta {id: $id})
             WITH r LIMIT 1
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
@@ -325,7 +328,8 @@ export const obtenerReceta = async (req, res) => {
                 RETURN (CASE WHEN size(topPatrs) > 0 THEN reduce(s = "", p in topPatrs | s + (CASE WHEN s = "" THEN "" ELSE " & " END) + p.nombre) ELSE null END) AS maxPatrNombre
             }
             
-            RETURN r.titulo AS titulo,
+            RETURN r.id AS id,
+                   r.titulo AS titulo,
                    r.descripcion AS descripcion,
                    r.dificultad AS dificultad,
                    r.tiempo AS tiempo,
@@ -336,9 +340,9 @@ export const obtenerReceta = async (req, res) => {
                    u.nombre AS creador,
                    collect(DISTINCT { nombre: i.nombre, cantidad: co.cantidad, recomendado: maxPatrNombre }) AS ingredientes
         `;
-        const result = await session.run(query, { titulo });
-        if (result.records.length === 0 || result.records[0].get('titulo') === null) {
-            return res.status(404).json({ error: `Receta '${titulo}' no encontrada` });
+        const result = await session.run(query, { id });
+        if (result.records.length === 0 || result.records[0].get('id') === null) {
+            return res.status(404).json({ error: `Receta '${id}' no encontrada` });
         }
         const record = result.records[0];
         
@@ -347,6 +351,7 @@ export const obtenerReceta = async (req, res) => {
 
         res.status(200).json({
             receta: {
+                id: record.get('id'),
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
@@ -407,21 +412,22 @@ export const obtenerIngredientes = async (req, res) => {
 };
 
 // 8. Recetas Similares
-// GET /api/recetas/:titulo/similares
+// GET /api/recetas/:id/similares
 export const obtenerRecetasSimilares = async (req, res) => {
-    const { titulo } = req.params;
+    const { id } = req.params;
     const session = getSession();
     try {
         const query = `
-            MATCH (r1:Receta {titulo: $titulo})-[:CONTIENE]->(i:Ingrediente)<-[:CONTIENE]-(r2:Receta)
+            MATCH (r1:Receta {id: $id})-[:CONTIENE]->(i:Ingrediente)<-[:CONTIENE]-(r2:Receta)
             OPTIONAL MATCH (r2)-[:PERTENECE_A]->(c:Categoria)
-            RETURN r2.titulo AS receta, r2.dificultad AS dificultad, r2.tiempo AS tiempo, r2.imagen AS imagen, c.nombre AS categoria, count(i) AS ingredientes_comunes
+            RETURN r2.id AS id, r2.titulo AS receta, r2.dificultad AS dificultad, r2.tiempo AS tiempo, r2.imagen AS imagen, c.nombre AS categoria, count(i) AS ingredientes_comunes
             ORDER BY ingredientes_comunes DESC LIMIT 5
         `;
-        const result = await session.run(query, { titulo });
+        const result = await session.run(query, { id });
         const similares = result.records.map(r => {
             const count = r.get('ingredientes_comunes');
             return {
+                id: r.get('id'),
                 titulo: r.get('receta'),
                 dificultad: r.get('dificultad'),
                 tiempo: r.get('tiempo'),
@@ -461,7 +467,7 @@ export const obtenerRecetaDelDia = async (req, res) => {
             MATCH (d:Destacada {fecha: $fecha})-[:RECETA_DE_HOY]->(r:Receta)
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
             OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
-            RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
+            RETURN r.id AS id, r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
                    r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
         `;
         const checkResult = await session.run(checkQuery, { fecha });
@@ -471,6 +477,7 @@ export const obtenerRecetaDelDia = async (req, res) => {
         if (checkResult.records.length > 0 && checkResult.records[0].get('titulo') !== null) {
             const record = checkResult.records[0];
             receta = {
+                id: record.get('id'),
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
@@ -537,12 +544,13 @@ export const obtenerRecetaDelDia = async (req, res) => {
                 WITH d, r
                 OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
                 OPTIONAL MATCH (u:Usuario)-[:CREO]->(r)
-                RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
+                RETURN r.id AS id, r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, 
                        r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, u.nombre AS creador
             `;
             const createResult = await session.run(createQuery, { selectedTitulo, fecha });
             const record = createResult.records[0];
             receta = {
+                id: record.get('id'),
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
@@ -570,13 +578,14 @@ export const obtenerTendencias = async (req, res) => {
         const query = `
             MATCH (r:Receta)<-[:GUARDO_FAV]-(u:Usuario)
             OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
-            RETURN r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, count(u) AS popularidad
+            RETURN r.id AS id, r.titulo AS titulo, r.descripcion AS descripcion, r.dificultad AS dificultad, r.tiempo AS tiempo, r.imagen AS imagen, c.nombre AS categoria, count(u) AS popularidad
             ORDER BY popularidad DESC LIMIT 6
         `;
         const result = await session.run(query);
         const tendencias = result.records.map(record => {
             const pop = record.get('popularidad');
             return {
+                id: record.get('id'),
                 titulo: record.get('titulo'),
                 descripcion: record.get('descripcion'),
                 dificultad: record.get('dificultad'),
@@ -596,17 +605,17 @@ export const obtenerTendencias = async (req, res) => {
 };
 
 
-// GET /api/recetas/:titulo/grafo
+// GET /api/recetas/:id/grafo
 export const obtenerGrafoReceta = async (req, res) => {
-    const { titulo } = req.params;
+    const { id } = req.params;
     const session = getSession();
     try {
         const query = `
-            MATCH (r:Receta {titulo: $titulo})
+            MATCH (r:Receta {id: $id})
             OPTIONAL MATCH (r)-[rel:USA_INGREDIENTE]->(i:Ingrediente)
             RETURN r, collect(rel) as relations, collect(i) as ingredientes
         `;
-        const result = await session.run(query, { titulo });
+        const result = await session.run(query, { id });
         
         if (result.records.length === 0) {
             return res.status(404).json({ error: 'Receta no encontrada' });
