@@ -5,19 +5,22 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
   const [profile, setProfile] = useState(null);
   const [recetasMap, setRecetasMap] = useState({});
   const [recommendations, setRecommendations] = useState([]);
+  const [feedSeguidos, setFeedSeguidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('favoritos');
   const toast = useToast();
 
   const refresh = async (silent = false) => {
     if (!silent) setLoading(true);
-    const [{ usuario }, recs, { recetas }] = await Promise.all([
+    const [{ usuario }, recs, { recetas }, feed] = await Promise.all([
       window.api.obtenerUsuario(user.nombre),
       window.api.recomendaciones(user.nombre),
       window.api.listarRecetas(),
+      window.api.feedSeguidos(user.nombre)
     ]);
     setProfile(usuario);
     setRecommendations(recs.recomendaciones);
+    setFeedSeguidos(feed.recetas);
     const map = Object.fromEntries(recetas.map(r => [r.id, r]));
     setRecetasMap(map);
     setLoading(false);
@@ -95,10 +98,11 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <Stat label="Seguidores" value={profile.seguidores?.length || 0} />
+              <Stat label="Seguidos" value={profile.seguidos?.length || 0} />
               <Stat label="Creadas" value={profile.recetasCreadas.length} />
               <Stat label="Favoritas" value={profile.recetasFavoritas.length} />
-              <Stat label="Para vos" value={recommendations.length} />
             </div>
           </div>
         </div>
@@ -166,6 +170,9 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
           <ProfileTab active={tab === 'favoritos'} onClick={() => setTab('favoritos')} count={favRecs.length}>
             Favoritas
           </ProfileTab>
+          <ProfileTab active={tab === 'seguidos'} onClick={() => setTab('seguidos')} count={feedSeguidos.length}>
+            Feed de Seguidos
+          </ProfileTab>
           <ProfileTab active={tab === 'creadas'} onClick={() => setTab('creadas')} count={myRecs.length}>
             Creadas por mí
           </ProfileTab>
@@ -193,6 +200,28 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                   receta={r}
                   onOpen={() => onOpenRecipe(r.id)}
                   isFav={true}
+                  onFav={() => toggleFav(r.id)}
+                />
+              ))}
+            </div>
+          )
+        ) : tab === 'seguidos' ? (
+          feedSeguidos.length === 0 ? (
+            <EmptyState
+              icon="user"
+              title="Aún no hay actividad"
+              action={<Button variant="primary" onClick={onExploreRecipes}>Descubrir chefs</Button>}
+            >
+              Seguí a otros creadores para ver sus nuevas recetas acá.
+            </EmptyState>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {feedSeguidos.map(r => (
+                <RecipeCard
+                  key={r.id}
+                  receta={r}
+                  onOpen={() => onOpenRecipe(r.id)}
+                  isFav={favRecs.some(f => f.id === r.id)}
                   onFav={() => toggleFav(r.id)}
                 />
               ))}
