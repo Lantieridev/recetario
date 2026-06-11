@@ -40,6 +40,9 @@ const CookMode = ({ steps, onClose, onFinish }) => {
   const timerMatch = step.match(/\[⏱\s*(.+?)\]/);
   const durationStr = timerMatch ? timerMatch[1] : null;
   const cleanStep = step.replace(/\[⏱\s*(.+?)\]/, '').trim().replace(/^\d+\.\s*/, '');
+  
+  const nextStepRaw = activeIdx < steps.length - 1 ? steps[activeIdx + 1] : null;
+  const cleanNextStep = nextStepRaw ? nextStepRaw.replace(/\[⏱\s*(.+?)\]/, '').trim().replace(/^\d+\.\s*/, '') : null;
 
   const isLast = activeIdx === steps.length - 1;
 
@@ -88,7 +91,7 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       </div>
 
       {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8vw', overflowY: 'auto', position: 'relative', zIndex: 5 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 8vw', overflowY: 'auto', position: 'relative', zIndex: 5 }}>
         <div className="font-display" style={{ 
           fontSize: 'clamp(36px, 6vw, 72px)', 
           lineHeight: 1.1, 
@@ -99,6 +102,22 @@ const CookMode = ({ steps, onClose, onFinish }) => {
         }}>
           {cleanStep}
         </div>
+
+        {cleanNextStep && (
+          <div className="fade-in" style={{
+            marginTop: '6vh',
+            maxWidth: '30ch',
+            textAlign: 'center',
+            color: 'var(--ink-4)',
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
+              Próximo paso
+            </span>
+            <span style={{ fontSize: 'clamp(16px, 2.5vw, 24px)', lineHeight: 1.4 }}>
+              {cleanNextStep}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Timer / Action floating section */}
