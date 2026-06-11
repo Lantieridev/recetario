@@ -1,6 +1,7 @@
 import { getSession } from '../config/neo4j.js';
 import neo4j from 'neo4j-driver';
 import { formatDuration } from '../utils/timeFormatter.js';
+import { buscarImagenes } from '../utils/imageSearchService.js';
 
 // 1. Crear Receta (relacionada con su creador y categoría)
 // POST /api/recetas
@@ -764,5 +765,23 @@ export const obtenerFeedSeguidos = async (req, res) => {
         res.status(500).json({ error: error.message });
     } finally {
         session.close();
+    }
+};
+
+// 16. Obtener sugerencias de imágenes basadas en el título (Google Custom Search + Fallback Unsplash)
+// GET /api/recetas/sugerencias-imagenes?query=...
+export const obtenerSugerenciasImagenes = async (req, res) => {
+    const { query } = req.query;
+
+    if (!query || query.trim() === '') {
+        return res.status(400).json({ error: 'Falta el parámetro de búsqueda "query"' });
+    }
+
+    try {
+        const sugerencias = await buscarImagenes(query.trim());
+        res.status(200).json({ sugerencias });
+    } catch (error) {
+        console.error('Error al obtener sugerencias de imágenes:', error);
+        res.status(500).json({ error: 'Error interno del servidor', detalle: error.message });
     }
 };

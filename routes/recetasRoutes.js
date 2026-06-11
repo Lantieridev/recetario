@@ -13,7 +13,8 @@ import {
     obtenerGrafoReceta,
     enlazarAlergeno,
     obtenerEstadisticasPublicas,
-    obtenerFeedSeguidos
+    obtenerFeedSeguidos,
+    obtenerSugerenciasImagenes
 } from '../controllers/recetasController.js';
 
 const router = express.Router();
@@ -25,6 +26,7 @@ router.get('/tendencias', obtenerTendencias);
 router.get('/del-dia', obtenerRecetaDelDia);
 router.get('/estadisticas-publicas', obtenerEstadisticasPublicas);
 router.get('/feed/seguidos', obtenerFeedSeguidos);
+router.get('/sugerencias-imagenes', obtenerSugerenciasImagenes);
 router.post('/', crearReceta);
 router.get('/', listarRecetas);
 router.post('/ingredientes/:ingrediente/alergenos', enlazarAlergeno);
