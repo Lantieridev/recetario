@@ -58,12 +58,12 @@
     return handleResponse(res);
   };
 
-  api.toggleFavorito = async (nombre, tituloReceta) => {
+  api.toggleFavorito = async (nombre, recetaId) => {
     await delay();
     const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/favoritos/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tituloReceta })
+      body: JSON.stringify({ recetaId })
     });
     return handleResponse(res);
   };
@@ -86,9 +86,9 @@
     return result;
   };
 
-  api.agregarIngrediente = async (titulo, data) => {
+  api.agregarIngrediente = async (id, data) => {
     await delay(50);
-    const res = await fetch(`/api/recetas/${encodeURIComponent(titulo)}/ingredientes`, {
+    const res = await fetch(`/api/recetas/${encodeURIComponent(id)}/ingredientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -111,9 +111,9 @@
     return handleResponse(res);
   };
 
-  api.detalleReceta = async (titulo) => {
+  api.detalleReceta = async (id) => {
     await delay();
-    const res = await fetch(`/api/recetas/${encodeURIComponent(titulo)}`);
+    const res = await fetch(`/api/recetas/${encodeURIComponent(id)}`);
     return handleResponse(res);
   };
 
@@ -143,12 +143,12 @@
     return handleResponse(res);
   };
 
-  api.registrarHistorial = async (nombre, tituloReceta) => {
+  api.registrarHistorial = async (nombre, recetaId) => {
     await delay();
     const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}/historial`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tituloReceta })
+      body: JSON.stringify({ recetaId })
     });
     return handleResponse(res);
   };
