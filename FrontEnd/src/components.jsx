@@ -105,11 +105,16 @@ const IconButton = ({ name, size = 'md', label, className = '', ...rest }) => (
 //  Badges, chips, dividers
 // ============================================================
 const CAT_COLORS = {
-  'SIN TACC':    'var(--cat-sintacc)',
-  'Vegetariano': 'var(--cat-veg)',
-  'Vegano':      'var(--cat-vegano)',
-  'Pastas':      'var(--cat-pastas)',
-  'Postre':      'var(--cat-postre)',
+  'SIN TACC':      'var(--cat-sintacc)',
+  'Vegetariano':   'var(--cat-veg)',
+  'Vegano':        'var(--cat-vegano)',
+  'Pastas':        'var(--cat-pastas)',
+  'Postre':        'var(--cat-postre)',
+  'Comida rápida': 'var(--cat-fastfood)',
+  'Bebidas':       'var(--cat-bebidas)',
+  'Carnes':        'var(--cat-carnes)',
+  'Minutas':       'var(--cat-minutas)',
+  'Panadería':     'var(--cat-panaderia)',
 };
 
 const CategoryBadge = ({ name, size = 'md' }) => {
