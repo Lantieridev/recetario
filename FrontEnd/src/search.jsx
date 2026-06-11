@@ -587,7 +587,7 @@ const SearchResultCard = ({ result, onOpen, isFav, onFav, rank, topMatch }) => {
       </div>
 
       <div style={{ width: 200, height: 110 }}>
-        <RecipeCover titulo={result.receta} categoria={result.categoria} height={110} compact />
+        <CleanRecipeImage titulo={result.receta} categoria={result.categoria} imagenUrl={result.imagen} height={110} />
       </div>
 
       <div style={{ minWidth: 0 }}>

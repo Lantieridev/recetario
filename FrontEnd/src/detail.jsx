@@ -158,7 +158,7 @@
   );
 };
 
-const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
+const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe, onNavigateProfile }) => {
   const [data, setData] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
@@ -277,7 +277,12 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <CategoryBadge name={data.categoria} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-2)' }}>
-                <span style={{ fontSize: 13 }}>por {data.creador}</span>
+                <span 
+                  onClick={() => onNavigateProfile?.(data.creador)}
+                  style={{ fontSize: 13, cursor: 'pointer', textDecoration: 'underline', color: 'var(--accent)' }}
+                >
+                  por {data.creador}
+                </span>
                 {data.creador && <span style={{ color: 'var(--accent)', background: 'var(--accent-soft)', padding: 2, borderRadius: '50%', display: 'flex' }}><Icon name="check" size={10} stroke={3} /></span>}
               </div>
               {data.creador !== user.nombre && (
