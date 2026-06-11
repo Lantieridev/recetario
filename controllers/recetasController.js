@@ -731,40 +731,38 @@ export const obtenerEstadisticasPublicas = async (req, res) => {
     }
 };
 
- / /   G E T   / a p i / r e c e t a s / f e e d / s e g u i d o s 
- e x p o r t   c o n s t   o b t e n e r F e e d S e g u i d o s   =   a s y n c   ( r e q ,   r e s )   = >   { 
-         c o n s t   {   u s u a r i o   }   =   r e q . q u e r y ; 
-         i f   ( ! u s u a r i o )   { 
-                 r e t u r n   r e s . s t a t u s ( 4 0 0 ) . j s o n ( {   e r r o r :   ' U s u a r i o   r e q u e r i d o '   } ) ; 
-         } 
- 
-         c o n s t   s e s s i o n   =   g e t S e s s i o n ( ) ; 
-         t r y   { 
-                 c o n s t   q u e r y   =   \ 
-                         M A T C H   ( u : U s u a r i o   { n o m b r e :   \ } ) - [ : S I G U E ] - > ( c : U s u a r i o ) - [ : C R E O ] - > ( r : R e c e t a ) 
-                         R E T U R N   r . i d   A S   i d ,   r . t i t u l o   A S   t i t u l o ,   r . d e s c r i p c i o n   A S   d e s c r i p c i o n , 
-                                       r . t i e m p o   A S   t i e m p o ,   r . d i f i c u l t a d   A S   d i f i c u l t a d ,   r . c a t e g o r i a   A S   c a t e g o r i a , 
-                                       r . i m a g e n   A S   i m a g e n ,   c . n o m b r e   A S   c r e a d o r 
-                         L I M I T   2 0 
-                 \ ; 
-                 c o n s t   r e s u l t   =   a w a i t   s e s s i o n . r u n ( q u e r y ,   {   u s u a r i o   } ) ; 
-                 c o n s t   r e c e t a s   =   r e s u l t . r e c o r d s . m a p ( r e c o r d   = >   ( { 
-                         i d :   r e c o r d . g e t ( ' i d ' ) , 
-                         t i t u l o :   r e c o r d . g e t ( ' t i t u l o ' ) , 
-                         d e s c r i p c i o n :   r e c o r d . g e t ( ' d e s c r i p c i o n ' ) , 
-                         t i e m p o :   r e c o r d . g e t ( ' t i e m p o ' ) , 
-                         d i f i c u l t a d :   r e c o r d . g e t ( ' d i f i c u l t a d ' ) , 
-                         c a t e g o r i a :   r e c o r d . g e t ( ' c a t e g o r i a ' ) , 
-                         i m a g e n :   r e c o r d . g e t ( ' i m a g e n ' ) , 
-                         c r e a d o r :   r e c o r d . g e t ( ' c r e a d o r ' ) 
-                 } ) ) ; 
- 
-                 r e s . s t a t u s ( 2 0 0 ) . j s o n ( {   r e c e t a s   } ) ; 
-         }   c a t c h   ( e r r o r )   { 
-                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   e r r o r :   e r r o r . m e s s a g e   } ) ; 
-         }   f i n a l l y   { 
-                 s e s s i o n . c l o s e ( ) ; 
-         } 
- } ; 
-  
- 
+// GET /api/recetas/feed/seguidos
+export const obtenerFeedSeguidos = async (req, res) => {
+    const { usuario } = req.query;
+    if (!usuario) {
+        return res.status(400).json({ error: 'Usuario requerido' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u:Usuario {nombre: $usuario})-[:SIGUE]->(c:Usuario)-[:CREO]->(r:Receta)
+            RETURN r.id AS id, r.titulo AS titulo, r.descripcion AS descripcion,
+                   r.tiempo AS tiempo, r.dificultad AS dificultad, r.categoria AS categoria,
+                   r.imagen AS imagen, c.nombre AS creador
+            LIMIT 20
+        `;
+        const result = await session.run(query, { usuario });
+        const recetas = result.records.map(record => ({
+            id: record.get('id'),
+            titulo: record.get('titulo'),
+            descripcion: record.get('descripcion'),
+            tiempo: record.get('tiempo'),
+            dificultad: record.get('dificultad'),
+            categoria: record.get('categoria'),
+            imagen: record.get('imagen'),
+            creador: record.get('creador')
+        }));
+
+        res.status(200).json({ recetas });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        session.close();
+    }
+};
