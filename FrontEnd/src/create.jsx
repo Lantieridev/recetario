@@ -553,17 +553,18 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
         imagen: form.imagenUrl || null
       };
 
-      await window.api.crearReceta(payload);
+      const createdRecipeRes = await window.api.crearReceta(payload);
+      const recipeId = createdRecipeRes.receta.id;
 
       for (const ing of form.ingredientes) {
-        await window.api.agregarIngrediente(capitalizedTitulo, {
+        await window.api.agregarIngrediente(recipeId, {
           nombreIngrediente: ing.nombre,
           cantidad: ing.cantidadDisplay || ing.cantidad,
         });
       }
 
       toast('¡Receta publicada!');
-      setTimeout(() => onCreated(capitalizedTitulo), 1100);
+      setTimeout(() => onCreated(recipeId, { ...payload, ingredientes: form.ingredientes }), 1100);
     } catch (err) {
       setError(err.error || 'No pudimos guardar la receta');
     } finally {
@@ -946,7 +947,11 @@ const CreateRecipeScreen = ({ user, onBack, onCreated }) => {
                         list="ing-suggestions"
                         placeholder=""
                         value={ingDraft.nombre}
-                        onChange={(e) => { setIngDraft({ ...ingDraft, nombre: e.target.value }); setIngErrors({ ...ingErrors, nombre: null }); }}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                          setIngDraft({ ...ingDraft, nombre: val });
+                          setIngErrors({ ...ingErrors, nombre: null });
+                        }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient(); } }}
                         style={{ borderColor: ingErrors.nombre ? 'var(--accent)' : undefined }}
                       />

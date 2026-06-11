@@ -177,11 +177,14 @@ export const obtenerRecomendaciones = async (req, res) => {
             MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(:Receta)<-[:GUARDO_FAV]-(otro:Usuario)
             MATCH (otro)-[:GUARDO_FAV]->(recomendacion:Receta)
             WHERE NOT (yo)-[:GUARDO_FAV]->(recomendacion)
+            OPTIONAL MATCH (recomendacion)-[:PERTENECE_A]->(cat:Categoria)
             RETURN recomendacion.id AS id,
                    recomendacion.titulo AS Recomendacion,
                    recomendacion.descripcion AS Descripcion,
                    recomendacion.dificultad AS Dificultad,
                    recomendacion.tiempo AS Tiempo,
+                   recomendacion.imagen AS Imagen,
+                   cat.nombre AS Categoria,
                    COUNT(otro) AS NivelDeMatch
             ORDER BY NivelDeMatch DESC
             LIMIT 5
@@ -198,6 +201,8 @@ export const obtenerRecomendaciones = async (req, res) => {
                 descripcion: record.get('Descripcion'),
                 dificultad: record.get('Dificultad'),
                 tiempo: formatDuration(record.get('Tiempo')),
+                imagen: record.get('Imagen'),
+                categoria: record.get('Categoria'),
                 nivelDeMatch: matchCount,
                 tipo: 'colaborativa'
             };
@@ -209,12 +214,14 @@ export const obtenerRecomendaciones = async (req, res) => {
                 MATCH (r:Receta)
                 WHERE NOT ((:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r))
                 OPTIONAL MATCH (u:Usuario)-[:GUARDO_FAV]->(r)
-                OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
+                OPTIONAL MATCH (r)-[:PERTENECE_A]->(cat:Categoria)
                 RETURN r.id AS id,
                        r.titulo AS Recomendacion,
                        r.descripcion AS Descripcion,
                        r.dificultad AS Dificultad,
                        r.tiempo AS Tiempo,
+                       r.imagen AS Imagen,
+                       cat.nombre AS Categoria,
                        COUNT(u) AS NivelDeMatch
                 ORDER BY NivelDeMatch DESC
                 LIMIT 5
@@ -229,6 +236,8 @@ export const obtenerRecomendaciones = async (req, res) => {
                     descripcion: record.get('Descripcion'),
                     dificultad: record.get('Dificultad'),
                     tiempo: formatDuration(record.get('Tiempo')),
+                    imagen: record.get('Imagen'),
+                    categoria: record.get('Categoria'),
                     nivelDeMatch: matchCount,
                     tipo: 'popular'
                 };
