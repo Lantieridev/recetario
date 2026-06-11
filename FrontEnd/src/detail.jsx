@@ -13,7 +13,14 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
-        setActiveIdx(i => Math.min(steps.length - 1, i + 1));
+        setActiveIdx(i => {
+          if (i === steps.length - 1) {
+            onClose();
+            onFinish();
+            return i;
+          }
+          return i + 1;
+        });
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -56,8 +63,8 @@ const CookMode = ({ steps, onClose, onFinish }) => {
     if (activeIdx > 0) setActiveIdx(activeIdx - 1);
   };
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'var(--cream)', display: 'flex', flexDirection: 'column' }}>
+  return ReactDOM.createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--cream)', display: 'flex', flexDirection: 'column' }}>
       
       {/* Immersive Tap Zones */}
       <div 
@@ -117,7 +124,8 @@ const CookMode = ({ steps, onClose, onFinish }) => {
       </div>
 
       {timerOpen && <TimerModal duration={totalSeconds} onCancel={() => setTimerOpen(false)} onComplete={() => setTimerOpen(false)} inline={true} />}
-    </div>
+    </div>,
+    document.body
   );
 };
 
