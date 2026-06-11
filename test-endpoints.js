@@ -1,5 +1,5 @@
 import app from './app.js';
-import { closeDriver } from './config/neo4j.js';
+import { getSession, closeDriver } from './config/neo4j.js';
 
 const PORT = 3001; // Usamos un puerto diferente para la prueba
 let server;
@@ -30,6 +30,17 @@ async function runTests() {
     server = app.listen(PORT, async () => {
         console.log(`🧪 Servidor de pruebas iniciado en http://localhost:${PORT}`);
         try {
+            // Limpiar datos de pruebas anteriores
+            const cleanupSession = getSession();
+            try {
+                await cleanupSession.run("MATCH (u:Usuario {nombre: 'Carlos'}) DETACH DELETE u");
+                await cleanupSession.run("MATCH (r:Receta {titulo: 'Pollo al verdeo'}) DETACH DELETE r");
+            } catch (err) {
+                console.warn('Advertencia al limpiar datos:', err.message);
+            } finally {
+                await cleanupSession.close();
+            }
+
             console.log('\n--- INICIANDO PRUEBAS DE ENDPOINTS ---');
 
             // 1. Endpoint: Crear Usuario (POST /api/usuarios)
@@ -67,10 +78,11 @@ async function runTests() {
             });
             console.log('Status:', res3.status);
             console.log('Respuesta:', JSON.stringify(res3.data));
+            const polloId = res3.data && res3.data.receta ? res3.data.receta.id : null;
 
-            // 4. Endpoint: Agregar Ingrediente a Receta con cantidad (POST /api/recetas/:titulo/ingredientes)
+            // 4. Endpoint: Agregar Ingrediente a Receta con cantidad (POST /api/recetas/:id/ingredientes)
             console.log('\n4. Probando: Asociar Ingrediente con propiedad cantidad...');
-            const res4 = await request('/api/recetas/Pollo al verdeo/ingredientes', {
+            const res4 = await request(`/api/recetas/${polloId}/ingredientes`, {
                 method: 'POST',
                 body: JSON.stringify({
                     nombreIngrediente: 'Pollo',
@@ -85,7 +97,7 @@ async function runTests() {
             const res5 = await request('/api/usuarios/Carlos/favoritos', {
                 method: 'POST',
                 body: JSON.stringify({
-                    tituloReceta: 'Pizza margherita'
+                    recetaId: 'ff8b31c5-579d-4e67-bf46-b9b3cb0abfce'
                 })
             });
             console.log('Status:', res5.status);
@@ -110,9 +122,9 @@ async function runTests() {
             console.log('Status:', res8.status);
             console.log('Respuesta:', JSON.stringify(res8.data));
 
-            // 9. Endpoint: Recetas Similares (GET /api/recetas/:titulo/similares)
+            // 9. Endpoint: Recetas Similares (GET /api/recetas/:id/similares)
             console.log('\n9. Probando: Recetas Similares...');
-            const res9 = await request('/api/recetas/Pizza margherita/similares');
+            const res9 = await request('/api/recetas/ff8b31c5-579d-4e67-bf46-b9b3cb0abfce/similares');
             console.log('Status:', res9.status);
             console.log('Respuesta:', JSON.stringify(res9.data));
 
@@ -159,7 +171,7 @@ async function runTests() {
             console.log('\n16. Probando: Historial...');
             const res16 = await request('/api/usuarios/Carlos/historial', {
                 method: 'POST',
-                body: JSON.stringify({ tituloReceta: 'Pizza margherita' })
+                body: JSON.stringify({ recetaId: 'ff8b31c5-579d-4e67-bf46-b9b3cb0abfce' })
             });
             console.log('Status:', res16.status);
             console.log('Respuesta Historial:', JSON.stringify(res16.data));
