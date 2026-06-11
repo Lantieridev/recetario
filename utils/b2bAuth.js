@@ -4,7 +4,12 @@ import { getSession } from '../config/neo4j.js';
 const CLIENTES_B2B_MOCK = {
     'HELLMANNS-1234': { nombre: 'Hellmanns', tier: 'BRAND' },
     'CARREFOUR-5678': { nombre: 'Carrefour', tier: 'RETAIL' },
-    'NESTLE-9999': { nombre: 'Nestle', tier: 'ENTERPRISE' }
+    'NESTLE-9999': { nombre: 'Nestle', tier: 'ENTERPRISE' },
+    'DANONE-1111': { nombre: 'Danone', tier: 'BRAND' },
+    'HEINZ-2222': { nombre: 'Heinz', tier: 'BRAND' },
+    'COCOCOLA-3333': { nombre: 'CocaCola', tier: 'BRAND' },
+    'COTO-4444': { nombre: 'Coto', tier: 'RETAIL' },
+    'WALMART-5555': { nombre: 'Walmart', tier: 'RETAIL' }
 };
 
 export const b2bAuth = (requiredTier) => {
