@@ -100,13 +100,13 @@ export const obtenerUsuario = async (req, res) => {
 
 // 3. Guardar Receta en Favoritos
 // POST /api/usuarios/:nombre/favoritos
-// Body: { tituloReceta }
+// Body: { recetaId }
 export const agregarFavorito = async (req, res) => {
     const { nombre } = req.params;
-    const { tituloReceta } = req.body;
+    const { recetaId } = req.body;
 
-    if (!tituloReceta) {
-        return res.status(400).json({ error: 'Falta campo obligatorio: tituloReceta' });
+    if (!recetaId) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: recetaId' });
     }
 
     const session = getSession();
@@ -118,21 +118,21 @@ export const agregarFavorito = async (req, res) => {
         }
 
         // Verificar que la receta exista
-        const recipeCheck = await session.run('MATCH (r:Receta {titulo: $tituloReceta}) RETURN r', { tituloReceta });
+        const recipeCheck = await session.run('MATCH (r:Receta {id: $recetaId}) RETURN r', { recetaId });
         if (recipeCheck.records.length === 0) {
-            return res.status(404).json({ error: `Receta '${tituloReceta}' no encontrada` });
+            return res.status(404).json({ error: `Receta '${recetaId}' no encontrada` });
         }
 
         const fechaStr = new Date().toISOString().split('T')[0];
         const query = `
             MATCH (u:Usuario {nombre: $nombre})
-            MATCH (r:Receta {titulo: $tituloReceta})
+            MATCH (r:Receta {id: $recetaId})
             MERGE (u)-[f:GUARDO_FAV]->(r)
             ON CREATE SET f.fecha = $fechaStr
             RETURN u.nombre AS usuario, r.titulo AS receta
         `;
 
-        const result = await session.run(query, { nombre, tituloReceta, fechaStr });
+        const result = await session.run(query, { nombre, recetaId, fechaStr });
         const record = result.records[0];
 
         res.status(200).json({
@@ -168,7 +168,8 @@ export const obtenerRecomendaciones = async (req, res) => {
             MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(:Receta)<-[:GUARDO_FAV]-(otro:Usuario)
             MATCH (otro)-[:GUARDO_FAV]->(recomendacion:Receta)
             WHERE NOT (yo)-[:GUARDO_FAV]->(recomendacion)
-            RETURN recomendacion.titulo AS Recomendacion,
+            RETURN recomendacion.id AS id,
+                   recomendacion.titulo AS Recomendacion,
                    recomendacion.descripcion AS Descripcion,
                    recomendacion.dificultad AS Dificultad,
                    recomendacion.tiempo AS Tiempo,
@@ -183,6 +184,7 @@ export const obtenerRecomendaciones = async (req, res) => {
             const nivelDeMatch = record.get('NivelDeMatch');
             const matchCount = neo4j.isInt(nivelDeMatch) ? nivelDeMatch.toNumber() : Number(nivelDeMatch);
             return {
+                id: record.get('id'),
                 receta: record.get('Recomendacion'),
                 descripcion: record.get('Descripcion'),
                 dificultad: record.get('Dificultad'),
@@ -199,7 +201,8 @@ export const obtenerRecomendaciones = async (req, res) => {
                 WHERE NOT ((:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r))
                 OPTIONAL MATCH (u:Usuario)-[:GUARDO_FAV]->(r)
                 OPTIONAL MATCH (r)-[:PERTENECE_A]->(c:Categoria)
-                RETURN r.titulo AS Recomendacion,
+                RETURN r.id AS id,
+                       r.titulo AS Recomendacion,
                        r.descripcion AS Descripcion,
                        r.dificultad AS Dificultad,
                        r.tiempo AS Tiempo,
@@ -212,6 +215,7 @@ export const obtenerRecomendaciones = async (req, res) => {
                 const nivelDeMatch = record.get('NivelDeMatch');
                 const matchCount = neo4j.isInt(nivelDeMatch) ? nivelDeMatch.toNumber() : Number(nivelDeMatch);
                 return {
+                    id: record.get('id'),
                     receta: record.get('Recomendacion'),
                     descripcion: record.get('Descripcion'),
                     dificultad: record.get('Dificultad'),
@@ -283,13 +287,13 @@ export const loginUsuario = async (req, res) => {
 
 // 6. Alternar Favorito
 // POST /api/usuarios/:nombre/favoritos/toggle
-// Body: { tituloReceta }
+// Body: { recetaId }
 export const toggleFavorito = async (req, res) => {
     const { nombre } = req.params;
-    const { tituloReceta } = req.body;
+    const { recetaId } = req.body;
 
-    if (!tituloReceta) {
-        return res.status(400).json({ error: 'Falta campo obligatorio: tituloReceta' });
+    if (!recetaId) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: recetaId' });
     }
 
     const session = getSession();
@@ -298,29 +302,29 @@ export const toggleFavorito = async (req, res) => {
         const userCheck = await session.run('MATCH (u:Usuario {nombre: $nombre}) RETURN u', { nombre });
         if (userCheck.records.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        const recipeCheck = await session.run('MATCH (r:Receta {titulo: $tituloReceta}) RETURN r', { tituloReceta });
+        const recipeCheck = await session.run('MATCH (r:Receta {id: $recetaId}) RETURN r', { recetaId });
         if (recipeCheck.records.length === 0) return res.status(404).json({ error: 'Receta no encontrada' });
 
         // Revisar si existe la relación
         const relCheck = await session.run(
-            'MATCH (u:Usuario {nombre: $nombre})-[f:GUARDO_FAV]->(r:Receta {titulo: $tituloReceta}) RETURN f',
-            { nombre, tituloReceta }
+            'MATCH (u:Usuario {nombre: $nombre})-[f:GUARDO_FAV]->(r:Receta {id: $recetaId}) RETURN f',
+            { nombre, recetaId }
         );
 
         let added = false;
         if (relCheck.records.length > 0) {
             // Existe -> Eliminar
             await session.run(
-                'MATCH (u:Usuario {nombre: $nombre})-[f:GUARDO_FAV]->(r:Receta {titulo: $tituloReceta}) DELETE f',
-                { nombre, tituloReceta }
+                'MATCH (u:Usuario {nombre: $nombre})-[f:GUARDO_FAV]->(r:Receta {id: $recetaId}) DELETE f',
+                { nombre, recetaId }
             );
             added = false;
         } else {
             // No existe -> Crear
             const fechaStr = new Date().toISOString().split('T')[0];
             await session.run(
-                'MATCH (u:Usuario {nombre: $nombre}), (r:Receta {titulo: $tituloReceta}) MERGE (u)-[f:GUARDO_FAV]->(r) ON CREATE SET f.fecha = $fechaStr',
-                { nombre, tituloReceta, fechaStr }
+                'MATCH (u:Usuario {nombre: $nombre}), (r:Receta {id: $recetaId}) MERGE (u)-[f:GUARDO_FAV]->(r) ON CREATE SET f.fecha = $fechaStr',
+                { nombre, recetaId, fechaStr }
             );
             added = true;
         }
@@ -431,24 +435,24 @@ export const obtenerComunidad = async (req, res) => {
 
 // 10. Registrar Historial (Cook Mode)
 // POST /api/usuarios/:nombre/historial
-// Body: { tituloReceta }
+// Body: { recetaId }
 export const registrarHistorial = async (req, res) => {
     const { nombre } = req.params;
-    const { tituloReceta } = req.body;
+    const { recetaId } = req.body;
 
-    if (!tituloReceta) {
-        return res.status(400).json({ error: 'Falta campo obligatorio: tituloReceta' });
+    if (!recetaId) {
+        return res.status(400).json({ error: 'Falta campo obligatorio: recetaId' });
     }
 
     const session = getSession();
     try {
         const query = `
             MATCH (u:Usuario {nombre: $nombre})
-            MATCH (r:Receta {titulo: $tituloReceta})
-            CREATE (u)-[:COCINO {fecha: datetime()}]->(r)
+            MATCH (r:Receta {id: $recetaId})
+            CREATE (u)-[:TERMINO {fecha: datetime()}]->(r)
             RETURN u.nombre AS usuario, r.titulo AS receta
         `;
-        const result = await session.run(query, { nombre, tituloReceta });
+        const result = await session.run(query, { nombre, recetaId });
         if (result.records.length === 0) {
             return res.status(404).json({ error: 'Usuario o receta no encontrados' });
         }
@@ -462,18 +466,18 @@ export const registrarHistorial = async (req, res) => {
 };
 
 
-// GET /api/usuarios/:nombre/recomendaciones/:tituloReceta/explicacion
+// GET /api/usuarios/:nombre/recomendaciones/:recetaId/explicacion
 export const obtenerExplicacionRecomendacion = async (req, res) => {
-    const { nombre, tituloReceta } = req.params;
+    const { nombre, recetaId } = req.params;
     const session = getSession();
     try {
         const query = `
-            MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r1:Receta)<-[:GUARDO_FAV]-(otro:Usuario)-[:GUARDO_FAV]->(recomendada:Receta {titulo: $tituloReceta})
+            MATCH (yo:Usuario {nombre: $nombre})-[:GUARDO_FAV]->(r1:Receta)<-[:GUARDO_FAV]-(otro:Usuario)-[:GUARDO_FAV]->(recomendada:Receta {id: $recetaId})
             RETURN r1, otro
             LIMIT 1
         `;
         
-        const result = await session.run(query, { nombre, tituloReceta });
+        const result = await session.run(query, { nombre, recetaId });
         
         if (result.records.length === 0) {
             return res.json({ recommendationPath: null });
@@ -486,11 +490,11 @@ export const obtenerExplicacionRecomendacion = async (req, res) => {
         const path = [
             { nodeId: 'u-me', label: nombre, type: 'User' },
             { relation: 'GUARDO_FAV' },
-            { nodeId: 'r-' + r1.properties.titulo, label: r1.properties.titulo, type: 'Recipe' },
+            { nodeId: 'r-' + r1.properties.id, label: r1.properties.titulo, type: 'Recipe' },
             { relation: 'GUARDO_FAV', direction: 'incoming' },
             { nodeId: 'u-' + otro.properties.nombre, label: otro.properties.nombre, type: 'User' },
             { relation: 'GUARDO_FAV' },
-            { nodeId: 'r-' + tituloReceta, label: tituloReceta, type: 'Recipe', highlight: true }
+            { nodeId: 'r-' + recetaId, label: 'Receta Recomendada', type: 'Recipe', highlight: true }
         ];
 
         res.json({
