@@ -1,36 +1,67 @@
 /* eslint-disable */
 // Profile: perfil + recetas creadas + favoritas + recomendaciones colaborativas
 
-const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes }) => {
+const ProfileScreen = ({ user, targetUsername, onOpenRecipe, onCreateRecipe, onExploreRecipes, onNavigateProfile }) => {
   const [profile, setProfile] = useState(null);
+  const [meProfile, setMeProfile] = useState(null);
   const [recetasMap, setRecetasMap] = useState({});
   const [recommendations, setRecommendations] = useState([]);
   const [feedSeguidos, setFeedSeguidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('favoritos');
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [activeListModal, setActiveListModal] = useState(null); // 'seguidores' | 'seguidos' | null
+  
+  const isSelf = targetUsername === user.nombre;
+  const [tab, setTab] = useState(isSelf ? 'favoritos' : 'creadas');
   const toast = useToast();
 
   const refresh = async (silent = false) => {
     if (!silent) setLoading(true);
-    const [{ usuario }, recs, { recetas }, feed] = await Promise.all([
-      window.api.obtenerUsuario(user.nombre),
-      window.api.recomendaciones(user.nombre),
-      window.api.listarRecetas(),
-      window.api.feedSeguidos(user.nombre)
-    ]);
-    setProfile(usuario);
-    setRecommendations(recs.recomendaciones);
-    setFeedSeguidos(feed.recetas);
-    const map = Object.fromEntries(recetas.map(r => [r.id, r]));
-    setRecetasMap(map);
-    setLoading(false);
+    try {
+      if (isSelf) {
+        const [{ usuario }, recs, { recetas }, feed] = await Promise.all([
+          window.api.obtenerUsuario(targetUsername),
+          window.api.recomendaciones(targetUsername),
+          window.api.listarRecetas(),
+          window.api.feedSeguidos(targetUsername)
+        ]);
+        setProfile(usuario);
+        setMeProfile(usuario);
+        setRecommendations(recs.recomendaciones || []);
+        setFeedSeguidos(feed.recetas || []);
+        const map = Object.fromEntries(recetas.map(r => [r.id, r]));
+        setRecetasMap(map);
+        setIsFollowing(false);
+      } else {
+        const [{ usuario }, { recetas }, meRes] = await Promise.all([
+          window.api.obtenerUsuario(targetUsername),
+          window.api.listarRecetas(),
+          window.api.obtenerUsuario(user.nombre)
+        ]);
+        setProfile(usuario);
+        setMeProfile(meRes.usuario);
+        setRecommendations([]);
+        setFeedSeguidos([]);
+        const map = Object.fromEntries(recetas.map(r => [r.id, r]));
+        setRecetasMap(map);
+        setIsFollowing(usuario.seguidores?.includes(user.nombre) || false);
+      }
+    } catch (e) {
+      console.error('Error al cargar perfil:', e);
+      toast('Error al cargar perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, [user]);
+  useEffect(() => {
+    setTab(targetUsername === user.nombre ? 'favoritos' : 'creadas');
+    refresh();
+  }, [user, targetUsername]);
 
   const toggleFav = async (id) => {
-    // Actualización optimista del estado local para respuesta instantánea en la UI
-    setProfile(prev => {
+    // Actualización optimista de meProfile (nuestro perfil)
+    setMeProfile(prev => {
       if (!prev) return prev;
       const isFavorited = prev.recetasFavoritas.includes(id);
       const recetasFavoritas = isFavorited
@@ -42,6 +73,23 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
     const res = await window.api.toggleFavorito(user.nombre, id);
     toast(res.added ? 'Guardada' : 'Quitada de favoritos', { icon: res.added ? 'bookmarkFilled' : 'check' });
     refresh(true); // Refresco silencioso en segundo plano
+  };
+
+  const toggleFollow = async () => {
+    try {
+      if (isFollowing) {
+        await window.api.dejarDeSeguirUsuario(targetUsername, user.nombre);
+        setIsFollowing(false);
+        toast(`Dejaste de seguir a ${targetUsername}`);
+      } else {
+        await window.api.seguirUsuario(targetUsername, user.nombre);
+        setIsFollowing(true);
+        toast(`Ahora sigues a ${targetUsername}`, { icon: 'check' });
+      }
+      refresh(true);
+    } catch (e) {
+      toast('Error al actualizar seguimiento');
+    }
   };
 
   if (loading || !profile) {
@@ -85,32 +133,57 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
               {profile.nombre[0].toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="eyebrow" style={{ marginBottom: 8 }}>Tu cocina</div>
-              <h1 className="font-display" style={{
-                fontSize: 'clamp(40px, 5vw, 60px)',
-                margin: '0 0 8px',
-                lineHeight: 1.0,
-                letterSpacing: '-0.025em',
-              }}>
-                {profile.nombre}
-              </h1>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>
+                {isSelf ? 'Tu cocina' : 'Perfil de Cocinero'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                <h1 className="font-display" style={{
+                  fontSize: 'clamp(40px, 5vw, 60px)',
+                  margin: '0 0 8px',
+                  lineHeight: 1.0,
+                  letterSpacing: '-0.025em',
+                }}>
+                  {profile.nombre}
+                </h1>
+                {!isSelf && (
+                  <button
+                    onClick={toggleFollow}
+                    className="btn btn-sm focus-ring"
+                    style={{
+                      padding: '6px 16px',
+                      fontSize: 13,
+                      borderRadius: 999,
+                      background: isFollowing ? 'var(--paper-2)' : 'var(--ink)',
+                      color: isFollowing ? 'var(--ink-2)' : 'var(--paper)',
+                      border: isFollowing ? '1px solid var(--rule)' : 'none',
+                      height: 36,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {isFollowing ? 'Siguiendo' : 'Seguir'}
+                  </button>
+                )}
+              </div>
               <div className="text-muted" style={{ fontSize: 14 }}>
                 {profile.mail}
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-              <Stat label="Seguidores" value={profile.seguidores?.length || 0} />
-              <Stat label="Seguidos" value={profile.seguidos?.length || 0} />
-              <Stat label="Creadas" value={profile.recetasCreadas.length} />
-              <Stat label="Favoritas" value={profile.recetasFavoritas.length} />
+              <Stat label="Seguidores" value={profile.seguidores?.length || 0} onClick={() => setActiveListModal('seguidores')} />
+              <Stat label="Seguidos" value={profile.seguidos?.length || 0} onClick={() => setActiveListModal('seguidos')} />
+              <Stat label="Creadas" value={profile.recetasCreadas?.length || 0} />
+              {isSelf && <Stat label="Favoritas" value={profile.recetasFavoritas?.length || 0} />}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Recommendations — featured row */}
-      {recommendations.length > 0 && (
+      {/* Recommendations — featured row (only self) */}
+      {isSelf && recommendations.length > 0 && (
         <section className="container" style={{ padding: '24px 32px 48px' }}>
           <div style={{
             background: 'var(--cream)',
@@ -145,7 +218,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                 gap: 16,
               }}>
                 {recommendations.map(r => (
-                  <RecommendationCard key={r.id} rec={r} isFav={profile.recetasFavoritas.includes(r.id)} onOpen={() => onOpenRecipe(r.id)} onFav={() => toggleFav(r.id)} />
+                  <RecommendationCard key={r.id} rec={r} isFav={meProfile?.recetasFavoritas?.includes(r.id)} onOpen={() => onOpenRecipe(r.id)} onFav={() => toggleFav(r.id)} />
                 ))}
               </div>
             </div>
@@ -165,26 +238,56 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
         </section>
       )}
 
-      {/* Tabs */}
+      {/* Tabs / Section Title */}
       <section className="container" style={{ padding: '0 32px' }}>
-        <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--rule)', marginBottom: 28, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          <ProfileTab active={tab === 'favoritos'} onClick={() => setTab('favoritos')} count={favRecs.length}>
-            Favoritas
-          </ProfileTab>
-          <ProfileTab active={tab === 'seguidos'} onClick={() => setTab('seguidos')} count={feedSeguidos.length}>
-            Feed de Seguidos
-          </ProfileTab>
-          <ProfileTab active={tab === 'creadas'} onClick={() => setTab('creadas')} count={myRecs.length}>
-            Creadas por mí
-          </ProfileTab>
-          <ProfileTab active={tab === 'terminadas'} onClick={() => setTab('terminadas')} count={terminadasRecs.length}>
-            Terminadas
-          </ProfileTab>
-        </div>
+        {isSelf ? (
+          <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--rule)', marginBottom: 28, overflowX: 'auto', scrollbarWidth: 'none' }}>
+            <ProfileTab active={tab === 'favoritos'} onClick={() => setTab('favoritos')} count={favRecs.length}>
+              Favoritas
+            </ProfileTab>
+            <ProfileTab active={tab === 'seguidos'} onClick={() => setTab('seguidos')} count={feedSeguidos.length}>
+              Feed de Seguidos
+            </ProfileTab>
+            <ProfileTab active={tab === 'creadas'} onClick={() => setTab('creadas')} count={myRecs.length}>
+              Creadas por mí
+            </ProfileTab>
+            <ProfileTab active={tab === 'terminadas'} onClick={() => setTab('terminadas')} count={terminadasRecs.length}>
+              Terminadas
+            </ProfileTab>
+          </div>
+        ) : (
+          <div style={{ borderBottom: '1px solid var(--rule)', marginBottom: 28, paddingBottom: 12 }}>
+            <h2 className="font-display" style={{ fontSize: 28, margin: 0, color: 'var(--ink)' }}>
+              Recetas de {profile.nombre}
+            </h2>
+          </div>
+        )}
       </section>
 
+      {/* Recipe Grid Content */}
       <section className="container" style={{ padding: '0 32px 96px' }}>
-        {tab === 'favoritos' ? (
+        {!isSelf ? (
+          myRecs.length === 0 ? (
+            <EmptyState
+              icon="chef"
+              title="Aún no tiene recetas"
+            >
+              Este cocinero todavía no compartió ninguna receta con la comunidad.
+            </EmptyState>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {myRecs.map(r => (
+                <RecipeCard
+                  key={r.id}
+                  receta={r}
+                  onOpen={() => onOpenRecipe(r.id)}
+                  isFav={meProfile?.recetasFavoritas?.includes(r.id) || false}
+                  onFav={() => toggleFav(r.id)}
+                />
+              ))}
+            </div>
+          )
+        ) : tab === 'favoritos' ? (
           favRecs.length === 0 ? (
             <EmptyState
               icon="bookmark"
@@ -222,7 +325,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                   key={r.id}
                   receta={r}
                   onOpen={() => onOpenRecipe(r.id)}
-                  isFav={favRecs.some(f => f.id === r.id)}
+                  isFav={meProfile?.recetasFavoritas?.includes(r.id)}
                   onFav={() => toggleFav(r.id)}
                 />
               ))}
@@ -244,7 +347,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                   key={r.id}
                   receta={r}
                   onOpen={() => onOpenRecipe(r.id)}
-                  isFav={favRecs.some(f => f.id === r.id)}
+                  isFav={meProfile?.recetasFavoritas?.includes(r.id)}
                   onFav={() => toggleFav(r.id)}
                 />
               ))}
@@ -266,7 +369,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                   key={r.id}
                   receta={r}
                   onOpen={() => onOpenRecipe(r.id)}
-                  isFav={favRecs.some(f => f.id === r.id)}
+                  isFav={meProfile?.recetasFavoritas?.includes(r.id)}
                   onFav={() => toggleFav(r.id)}
                 />
               ))}
@@ -274,16 +377,51 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
           )
         ) : null}
       </section>
+
+      {/* Followers / Following List Modal */}
+      {activeListModal && (
+        <UserListModal
+          title={activeListModal === 'seguidores' ? `Seguidores de ${profile.nombre}` : `A quiénes sigue ${profile.nombre}`}
+          users={activeListModal === 'seguidores' ? profile.seguidores : profile.seguidos}
+          onClose={() => setActiveListModal(null)}
+          onNavigateProfile={onNavigateProfile}
+        />
+      )}
     </div>
   );
 };
 
-const Stat = ({ label, value }) => (
-  <div style={{ minWidth: 80 }}>
-    <div className="font-display" style={{ fontSize: 38, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</div>
-    <div className="eyebrow" style={{ marginTop: 6, fontSize: 10 }}>{label}</div>
-  </div>
-);
+const Stat = ({ label, value, onClick }) => {
+  const [hover, setHover] = useState(false);
+  return (
+    <div 
+      onClick={onClick} 
+      onMouseEnter={() => onClick && setHover(true)}
+      onMouseLeave={() => onClick && setHover(false)}
+      style={{ 
+        minWidth: 80, 
+        cursor: onClick ? 'pointer' : 'default',
+        userSelect: 'none',
+        transition: 'transform 0.15s'
+      }}
+    >
+      <div 
+        className="font-display" 
+        style={{ 
+          fontSize: 38, 
+          lineHeight: 1, 
+          letterSpacing: '-0.02em',
+          color: hover ? 'var(--accent)' : 'var(--ink)',
+          textDecoration: hover ? 'underline' : 'none',
+          transition: 'color 0.15s'
+        }}
+      >
+        {value}
+      </div>
+      <div className="eyebrow" style={{ marginTop: 6, fontSize: 10, color: hover ? 'var(--accent)' : 'var(--ink-3)' }}>{label}</div>
+    </div>
+  );
+};
 
 const ProfileTab = ({ active, count, onClick, children }) => (
   <button
@@ -342,7 +480,7 @@ const RecommendationCard = ({ rec, isFav, onOpen, onFav }) => {
       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.transform = ''; }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifySpace: 'space-between', justifyContent: 'space-between' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           fontSize: 11,
@@ -382,6 +520,128 @@ const RecommendationCard = ({ rec, isFav, onOpen, onFav }) => {
         <span>{rec.categoria}</span>
       </div>
     </div>
+  );
+};
+
+// Modal Component for Followers/Following List
+const UserListModal = ({ title, users, onClose, onNavigateProfile }) => {
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 10000,
+      background: 'rgba(0, 0, 0, 0.4)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    }} onClick={onClose}>
+      <div 
+        style={{
+          background: 'var(--paper)',
+          border: '1px solid var(--rule)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: 400,
+          boxShadow: 'var(--shadow-xl)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '70vh',
+          animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--rule-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 className="font-display" style={{ fontSize: 22, margin: 0, letterSpacing: '-0.01em' }}>
+            {title}
+          </h3>
+          <button 
+            onClick={onClose} 
+            className="btn btn-icon btn-ghost btn-sm"
+            aria-label="Cerrar modal"
+            style={{ width: 32, height: 32 }}
+          >
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+
+        {/* Modal Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          {users.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
+              Nadie por aquí todavía.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {users.map(username => (
+                <button
+                  key={username}
+                  onClick={() => {
+                    onClose();
+                    onNavigateProfile(username);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius)',
+                    width: '100%',
+                    textAlign: 'left',
+                    transition: 'background-color 0.12s',
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    border: 'none',
+                  }}
+                  className="card-hover-bg"
+                >
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 999,
+                    background: 'var(--rule)',
+                    color: 'var(--ink)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}>
+                    {username[0].toUpperCase()}
+                  </div>
+                  <div style={{ fontWeight: 500, fontSize: 15, color: 'var(--ink)' }}>
+                    {username}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <style>{`
+        @keyframes modalSlideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .card-hover-bg:hover {
+          background-color: var(--rule-soft) !important;
+        }
+      `}</style>
+    </div>,
+    document.body
   );
 };
 
