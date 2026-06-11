@@ -70,9 +70,13 @@ export const obtenerUsuario = async (req, res) => {
             MATCH (u:Usuario {nombre: $nombre})
             OPTIONAL MATCH (u)-[:CREO]->(c:Receta)
             OPTIONAL MATCH (u)-[:GUARDO_FAV]->(f:Receta)
+            OPTIONAL MATCH (u)-[:SIGUE]->(sg:Usuario)
+            OPTIONAL MATCH (s:Usuario)-[:SIGUE]->(u)
             RETURN u.nombre AS nombre, u.mail AS mail, 
-                   collect(DISTINCT c.titulo) AS creadas, 
-                   collect(DISTINCT f.id) AS favoritas
+                   collect(DISTINCT c.id) AS creadas, 
+                   collect(DISTINCT f.id) AS favoritas,
+                   collect(DISTINCT sg.nombre) AS seguidos,
+                   collect(DISTINCT s.nombre) AS seguidores
         `;
 
         const result = await session.run(query, { nombre });
@@ -86,8 +90,10 @@ export const obtenerUsuario = async (req, res) => {
             usuario: {
                 nombre: record.get('nombre'),
                 mail: record.get('mail'),
-                recetasCreadas: record.get('creadas'),
-                recetasFavoritas: record.get('favoritas')
+                recetasCreadas: record.get('creadas').filter(id => id !== null),
+                recetasFavoritas: record.get('favoritas').filter(id => id !== null),
+                seguidos: record.get('seguidos').filter(n => n !== null),
+                seguidores: record.get('seguidores').filter(n => n !== null)
             }
         });
     } catch (error) {
@@ -539,8 +545,63 @@ export const obtenerUsuarioStatus = async (req, res) => {
         });
     } catch (error) {
         console.error('Error al obtener status de usuario:', error);
-        res.status(500).json({ error: 'Error al verificar status del usuario.' });
+        res.status(500).json({ error: 'Error al verificar status' });
+        return null;
     } finally {
-        await session.close();
+        session.close();
+    }
+};
+
+// POST /api/usuarios/:nombre/seguir
+export const seguirUsuario = async (req, res) => {
+    const { nombre } = req.params; // usuario a seguir
+    const { seguidor } = req.body; // usuario que sigue
+
+    if (!seguidor || seguidor === nombre) {
+        return res.status(400).json({ error: 'Seguidor inválido' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u1:Usuario {nombre: $seguidor})
+            MATCH (u2:Usuario {nombre: $nombre})
+            MERGE (u1)-[:SIGUE]->(u2)
+            RETURN u1.nombre, u2.nombre
+        `;
+        const result = await session.run(query, { seguidor, nombre });
+        if (result.records.length === 0) {
+            return res.status(404).json({ error: 'Uno de los usuarios no existe' });
+        }
+        res.status(200).json({ message: 'Usuario seguido exitosamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        session.close();
+    }
+};
+
+// POST /api/usuarios/:nombre/dejardeseguir
+export const dejarDeSeguirUsuario = async (req, res) => {
+    const { nombre } = req.params;
+    const { seguidor } = req.body;
+
+    if (!seguidor) {
+        return res.status(400).json({ error: 'Seguidor inválido' });
+    }
+
+    const session = getSession();
+    try {
+        const query = `
+            MATCH (u1:Usuario {nombre: $seguidor})-[r:SIGUE]->(u2:Usuario {nombre: $nombre})
+            DELETE r
+            RETURN u1.nombre, u2.nombre
+        `;
+        await session.run(query, { seguidor, nombre });
+        res.status(200).json({ message: 'Se dejó de seguir al usuario' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        session.close();
     }
 };
