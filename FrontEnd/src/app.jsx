@@ -317,6 +317,7 @@ const App = () => {
           initialData={route.initialData}
           onBack={() => navigate({ name: route.from || 'browse' })}
           onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route.from || 'browse' })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
         />
       );
       break;
@@ -332,9 +333,11 @@ const App = () => {
       screen = (
         <ProfileScreen
           user={user}
+          targetUsername={route.username || user.nombre}
           onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'profile' })}
           onCreateRecipe={() => navigate({ name: 'create' })}
           onExploreRecipes={() => navigate({ name: 'browse' })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
         />
       );
       break;
@@ -343,6 +346,7 @@ const App = () => {
         <ComunidadScreen
           user={user}
           onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'comunidad' })}
+          onNavigateProfile={(username) => navigate({ name: 'profile', username })}
         />
       );
       break;

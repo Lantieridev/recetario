@@ -1,8 +1,8 @@
 /* eslint-disable */
 // Comunidad: Feed Social (Masonry), Creadores Destacados, Desafíos Premium
 
-const CreadorAvatar = ({ name, role, color }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', minWidth: 80 }}>
+const CreadorAvatar = ({ name, role, color, onClick }) => (
+  <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', minWidth: 80 }}>
     <div style={{
       width: 72, height: 72, borderRadius: '50%',
       background: color || 'var(--ink)', color: 'var(--paper)',
@@ -20,7 +20,7 @@ const CreadorAvatar = ({ name, role, color }) => (
   </div>
 );
 
-const ComunidadScreen = ({ user, onOpenRecipe }) => {
+const ComunidadScreen = ({ user, onOpenRecipe, onNavigateProfile }) => {
   const [tab, setTab] = useState('feed');
   const [data, setData] = useState({ recetas: [] });
   const [loading, setLoading] = useState(true);
@@ -50,12 +50,12 @@ const ComunidadScreen = ({ user, onOpenRecipe }) => {
           
           <div className="eyebrow" style={{ marginBottom: 16 }}>Creadores Destacados</div>
           <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingBottom: 16, scrollbarWidth: 'none' }}>
-            <CreadorAvatar name="Ornella" role="Chef Pastelera" color="#E57373" />
-            <CreadorAvatar name="Juan" role="Asador" color="#81C784" />
-            <CreadorAvatar name="Ana" role="Vegana" color="#64B5F6" />
-            <CreadorAvatar name="Martín" role="Panadero" color="#FFB74D" />
-            <CreadorAvatar name="Sofía" role="Bartender" color="#BA68C8" />
-            <CreadorAvatar name="Carlos" role="Gourmet" color="#4DB6AC" />
+            <CreadorAvatar name="Ornella" role="Chef Pastelera" color="#E57373" onClick={() => onNavigateProfile?.('Ornella')} />
+            <CreadorAvatar name="Juan" role="Asador" color="#81C784" onClick={() => onNavigateProfile?.('Juan')} />
+            <CreadorAvatar name="Ana" role="Vegana" color="#64B5F6" onClick={() => onNavigateProfile?.('Ana')} />
+            <CreadorAvatar name="Martín" role="Panadero" color="#FFB74D" onClick={() => onNavigateProfile?.('Martín')} />
+            <CreadorAvatar name="Sofía" role="Bartender" color="#BA68C8" onClick={() => onNavigateProfile?.('Sofía')} />
+            <CreadorAvatar name="Carlos" role="Gourmet" color="#4DB6AC" onClick={() => onNavigateProfile?.('Carlos')} />
           </div>
         </div>
       </section>
@@ -87,11 +87,21 @@ const ComunidadScreen = ({ user, onOpenRecipe }) => {
               {data.recetas.map((r, i) => (
                 <div key={r.titulo} className="fade-in" style={{ breakInside: 'avoid', marginBottom: 24, animationDelay: `${i * 28}ms`, background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--rule)' }}>
                   <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--rule-soft)' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 'bold' }}>
+                    <div 
+                      onClick={() => onNavigateProfile?.(r.creador)}
+                      style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 'bold', cursor: 'pointer' }}
+                    >
                       {r.creador[0].toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontSize: 14 }}><strong>{r.creador}</strong> preparó esta receta</div>
+                      <div style={{ fontSize: 14 }}>
+                        <strong 
+                          onClick={() => onNavigateProfile?.(r.creador)}
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          {r.creador}
+                        </strong> preparó esta receta
+                      </div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Hace {Math.floor(Math.random() * 20) + 1} horas</div>
                     </div>
                   </div>
