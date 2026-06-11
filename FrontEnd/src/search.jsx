@@ -225,17 +225,17 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
     sessionStorage.removeItem('search:filters');
   };
 
-  const toggleFav = async (titulo) => {
+  const toggleFav = async (id) => {
     // Actualización optimista
     setFavs(prev => {
       const n = new Set(prev);
-      if (n.has(titulo)) n.delete(titulo); else n.add(titulo);
+      if (n.has(id)) n.delete(id); else n.add(id);
       return n;
     });
-    const res = await window.api.toggleFavorito(user.nombre, titulo);
+    const res = await window.api.toggleFavorito(user.nombre, id);
     setFavs(prev => {
       const n = new Set(prev);
-      if (res.added) n.add(titulo); else n.delete(titulo);
+      if (res.added) n.add(id); else n.delete(id);
       return n;
     });
     toast(res.added ? 'Guardado en favoritos' : 'Quitado', { icon: res.added ? 'bookmarkFilled' : 'check' });
@@ -484,11 +484,11 @@ const SearchScreen = ({ user, onOpenRecipe }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {results.resultados.map((r, i) => (
                 <SearchResultCard
-                  key={r.receta}
+                  key={r.id}
                   result={r}
-                  onOpen={() => onOpenRecipe(r.receta)}
-                  isFav={favs.has(r.receta)}
-                  onFav={() => toggleFav(r.receta)}
+                  onOpen={() => onOpenRecipe(r.id)}
+                  isFav={favs.has(r.id)}
+                  onFav={() => toggleFav(r.id)}
                   rank={i + 1}
                   topMatch={results.resultados[0]?.coincidencias}
                 />

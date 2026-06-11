@@ -96,7 +96,7 @@ const ComunidadScreen = ({ user, onOpenRecipe }) => {
                     </div>
                   </div>
                   <div style={{ border: 'none' }}>
-                    <RecipeCard receta={r} onOpen={() => onOpenRecipe(r.titulo)} isFav={false} />
+                    <RecipeCard receta={r} onOpen={() => onOpenRecipe(r.id)} isFav={false} />
                   </div>
                 </div>
               ))}

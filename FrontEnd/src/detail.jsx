@@ -121,7 +121,7 @@ const CookMode = ({ steps, onClose, onFinish }) => {
   );
 };
 
-const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
+const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
   const [data, setData] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
@@ -137,29 +137,29 @@ const DetailScreen = ({ titulo, user, initialData, onBack, onOpenRecipe }) => {
     if (!data) setLoading(true);
     setCheckedSteps(new Set());
     setCheckedIngs(new Set());
-    window.api.detalleReceta(titulo).then(async (res) => {
+    window.api.detalleReceta(id).then(async (res) => {
       if (!alive) return;
       setData(res.receta);
       setServings(res.receta.porciones || 4);
       setLoading(false);
       const list = await window.api.listarRecetas({ categoria: res.receta.categoria });
-      if (alive) setRelated(list.recetas.filter(r => r.titulo !== titulo).slice(0, 6));
+      if (alive) setRelated(list.recetas.filter(r => r.id !== id).slice(0, 6));
     });
     window.api.obtenerUsuario(user.nombre).then(r => {
-      if (alive) setIsFav(new Set(r.usuario.recetasFavoritas).has(titulo));
+      if (alive) setIsFav(new Set(r.usuario.recetasFavoritas).has(id));
     });
     return () => { alive = false; };
-  }, [titulo, user]);
+  }, [id, user]);
 
   const toggleFav = async () => {
-    const res = await window.api.toggleFavorito(user.nombre, titulo);
+    const res = await window.api.toggleFavorito(user.nombre, id);
     setIsFav(res.added);
     toast(res.added ? 'Guardada en tu colección' : 'Quitada de favoritos', { icon: res.added ? 'bookmarkFilled' : 'check' });
   };
 
   const handleFinishCookMode = async () => {
     try {
-      await window.api.registrarHistorial(user.nombre, titulo);
+      await window.api.registrarHistorial(user.nombre, id);
       toast('¡Receta terminada! Guardada en tu historial.', { icon: 'sparkle' });
     } catch (e) {
       toast('Error al registrar historial.');

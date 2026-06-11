@@ -78,7 +78,7 @@ const DashboardScreen = ({ user, onOpenRecipe }) => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {data.recetas.slice(0, 5).map((r, i) => (
-                  <div key={r.titulo} onClick={() => onOpenRecipe(r.titulo)} className="card card-hover focus-ring" style={{ display: 'flex', alignItems: 'center', gap: 20, padding: 16, cursor: 'pointer' }}>
+                  <div key={r.titulo} onClick={() => onOpenRecipe(r.id)} className="card card-hover focus-ring" style={{ display: 'flex', alignItems: 'center', gap: 20, padding: 16, cursor: 'pointer' }}>
                     <div style={{ width: 80, height: 80, flexShrink: 0 }}>
                       <RecipeCover titulo={r.titulo} categoria={r.categoria} height={80} compact />
                     </div>

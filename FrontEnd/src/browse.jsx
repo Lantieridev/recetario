@@ -439,7 +439,7 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
         <section style={{ marginBottom: 0 }}>
           <RecetaDelDiaHero 
             receta={recetaDelDia} 
-            onOpen={() => onOpenRecipe(recetaDelDia.titulo)} 
+            onOpen={() => onOpenRecipe(recetaDelDia.id)} 
             isFav={favs.has(recetaDelDia.titulo)} 
             onFav={() => toggleFav(recetaDelDia.titulo)} 
             user={user}
@@ -624,9 +624,9 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
               <div key={r.titulo} className="fade-in" style={{ animationDelay: `${i * 28}ms` }}>
                 <RecipeCard
                   receta={r}
-                  onOpen={() => onOpenRecipe(r.titulo)}
+                  onOpen={() => onOpenRecipe(r.id)}
                   isFav={favs.has(r.titulo)}
-                  onFav={() => toggleFav(r.titulo)}
+                  onFav={() => toggleFav(r.id)}
                 />
               </div>
             ))}
@@ -637,9 +637,9 @@ const BrowseScreen = ({ user, onOpenRecipe, onCreateRecipe }) => {
               <div key={r.titulo} className="fade-in" style={{ animationDelay: `${i * 28}ms` }}>
                 <RecipeCard
                   receta={r}
-                  onOpen={() => onOpenRecipe(r.titulo)}
+                  onOpen={() => onOpenRecipe(r.id)}
                   isFav={favs.has(r.titulo)}
-                  onFav={() => toggleFav(r.titulo)}
+                  onFav={() => toggleFav(r.id)}
                   layout="list"
                 />
               </div>
