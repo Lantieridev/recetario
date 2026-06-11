@@ -442,7 +442,7 @@ export const obtenerComunidad = async (req, res) => {
 // 10. Registrar Historial (Cook Mode)
 // POST /api/usuarios/:nombre/historial
 // Body: { recetaId }
-export const registrarHistorial = async (req, res) => {
+export const registrarTerminada = async (req, res) => {
     const { nombre } = req.params;
     const { recetaId } = req.body;
 
