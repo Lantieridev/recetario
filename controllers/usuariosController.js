@@ -72,7 +72,7 @@ export const obtenerUsuario = async (req, res) => {
             OPTIONAL MATCH (u)-[:GUARDO_FAV]->(f:Receta)
             RETURN u.nombre AS nombre, u.mail AS mail, 
                    collect(DISTINCT c.titulo) AS creadas, 
-                   collect(DISTINCT f.titulo) AS favoritas
+                   collect(DISTINCT f.id) AS favoritas
         `;
 
         const result = await session.run(query, { nombre });

@@ -18,25 +18,25 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
     ]);
     setProfile(usuario);
     setRecommendations(recs.recomendaciones);
-    const map = Object.fromEntries(recetas.map(r => [r.titulo, r]));
+    const map = Object.fromEntries(recetas.map(r => [r.id, r]));
     setRecetasMap(map);
     setLoading(false);
   };
 
   useEffect(() => { refresh(); }, [user]);
 
-  const toggleFav = async (titulo) => {
+  const toggleFav = async (id) => {
     // Actualización optimista del estado local para respuesta instantánea en la UI
     setProfile(prev => {
       if (!prev) return prev;
-      const isFavorited = prev.recetasFavoritas.includes(titulo);
+      const isFavorited = prev.recetasFavoritas.includes(id);
       const recetasFavoritas = isFavorited
-        ? prev.recetasFavoritas.filter(t => t !== titulo)
-        : [...prev.recetasFavoritas, titulo];
+        ? prev.recetasFavoritas.filter(t => t !== id)
+        : [...prev.recetasFavoritas, id];
       return { ...prev, recetasFavoritas };
     });
 
-    const res = await window.api.toggleFavorito(user.nombre, titulo);
+    const res = await window.api.toggleFavorito(user.nombre, id);
     toast(res.added ? 'Guardada' : 'Quitada de favoritos', { icon: res.added ? 'bookmarkFilled' : 'check' });
     refresh(true); // Refresco silencioso en segundo plano
   };
@@ -140,7 +140,7 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
                 gap: 16,
               }}>
                 {recommendations.map(r => (
-                  <RecommendationCard key={r.receta} rec={r} isFav={profile.recetasFavoritas.includes(r.receta)} onOpen={() => onOpenRecipe(r.receta)} onFav={() => toggleFav(r.receta)} />
+                  <RecommendationCard key={r.id} rec={r} isFav={profile.recetasFavoritas.includes(r.id)} onOpen={() => onOpenRecipe(r.id)} onFav={() => toggleFav(r.id)} />
                 ))}
               </div>
             </div>
@@ -189,11 +189,11 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
               {favRecs.map(r => (
                 <RecipeCard
-                  key={r.titulo}
+                  key={r.id}
                   receta={r}
-                  onOpen={() => onOpenRecipe(r.titulo)}
+                  onOpen={() => onOpenRecipe(r.id)}
                   isFav={true}
-                  onFav={() => toggleFav(r.titulo)}
+                  onFav={() => toggleFav(r.id)}
                 />
               ))}
             </div>
@@ -211,11 +211,11 @@ const ProfileScreen = ({ user, onOpenRecipe, onCreateRecipe, onExploreRecipes })
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
               {myRecs.map(r => (
                 <RecipeCard
-                  key={r.titulo}
+                  key={r.id}
                   receta={r}
-                  onOpen={() => onOpenRecipe(r.titulo)}
-                  isFav={favRecs.some(f => f.titulo === r.titulo)}
-                  onFav={() => toggleFav(r.titulo)}
+                  onOpen={() => onOpenRecipe(r.id)}
+                  isFav={favRecs.some(f => f.id === r.id)}
+                  onFav={() => toggleFav(r.id)}
                 />
               ))}
             </div>

@@ -308,11 +308,11 @@ const App = () => {
     case 'detail':
       screen = (
         <DetailScreen
-          titulo={route.titulo}
+          id={route.id}
           user={user}
           initialData={route.initialData}
           onBack={() => navigate({ name: route.from || 'browse' })}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: route.from || 'browse' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: route.from || 'browse' })}
         />
       );
       break;
@@ -320,7 +320,7 @@ const App = () => {
       screen = (
         <SearchScreen
           user={user}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'search' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'search' })}
         />
       );
       break;
@@ -328,7 +328,7 @@ const App = () => {
       screen = (
         <ProfileScreen
           user={user}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'profile' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'profile' })}
           onCreateRecipe={() => navigate({ name: 'create' })}
           onExploreRecipes={() => navigate({ name: 'browse' })}
         />
@@ -338,7 +338,7 @@ const App = () => {
       screen = (
         <ComunidadScreen
           user={user}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'comunidad' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'comunidad' })}
         />
       );
       break;
@@ -346,7 +346,7 @@ const App = () => {
       screen = (
         <DashboardScreen
           user={user}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'dashboard' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'dashboard' })}
         />
       );
       break;
@@ -370,7 +370,7 @@ const App = () => {
         <CreateRecipeScreen
           user={user}
           onBack={() => navigate({ name: 'browse' })}
-          onCreated={(t, initialData) => navigate({ name: 'detail', titulo: t, from: 'browse', initialData })}
+          onCreated={(id, initialData) => navigate({ name: 'detail', id, from: 'browse', initialData })}
         />
       );
       break;
@@ -378,7 +378,7 @@ const App = () => {
       screen = (
         <BrowseScreen
           user={user}
-          onOpenRecipe={(title) => navigate({ name: 'detail', titulo: title, from: 'browse' })}
+          onOpenRecipe={(id) => navigate({ name: 'detail', id, from: 'browse' })}
           onCreateRecipe={() => navigate({ name: 'create' })}
         />
       );

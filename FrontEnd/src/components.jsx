@@ -549,7 +549,7 @@ const RecipeCarousel = ({ recipes, onOpenRecipe }) => {
         }}
       >
         {recipes.map(r => (
-          <div key={r.titulo} style={{ width: 280, flexShrink: 0, scrollSnapAlign: 'start', cursor: 'pointer' }} onClick={() => onOpenRecipe(r.titulo)}>
+          <div key={r.titulo} style={{ width: 280, flexShrink: 0, scrollSnapAlign: 'start', cursor: 'pointer' }} onClick={() => onOpenRecipe(r.id)}>
             <div className="card card-hover focus-ring" style={{ padding: 12, textAlign: 'left' }}>
               <RecipeCover titulo={r.titulo} categoria={r.categoria} height={160} compact />
               <div className="font-display" style={{ fontSize: 20, marginTop: 16, letterSpacing: '-0.01em', lineHeight: 1.1 }}>{r.titulo}</div>
