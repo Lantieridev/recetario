@@ -135,6 +135,7 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe }) => {
 
   useEffect(() => {
     let alive = true;
+    window.scrollTo(0, 0);
     if (!data) setLoading(true);
     setCheckedSteps(new Set());
     setCheckedIngs(new Set());
