@@ -81,6 +81,7 @@ MATCH (pimienta:Ingrediente {nombre: 'Pimienta'})
 MATCH (aceite:Ingrediente {nombre: 'Aceite'})
 MATCH (laurel:Ingrediente {nombre: 'Laurel'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Guiso de lentejas',
   descripcion: 'Un guiso hearty y reconfortante de lentejas con verduras, perfecto para días fríos',
   dificultad: 'Alta',
@@ -113,6 +114,7 @@ MATCH (aceite:Ingrediente {nombre: 'Aceite'})
 MATCH (noodles:Ingrediente {nombre: 'Noodles de Arroz'})
 MATCH (sal:Ingrediente {nombre: 'Sal'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Wok de verduras con pollo',
   descripcion: 'Salteado rápido de pollo y verduras con noodles de arroz, libre de gluten',
   dificultad: 'Media',
@@ -144,6 +146,7 @@ MATCH (aceite:Ingrediente {nombre: 'Aceite'})
 MATCH (levadura:Ingrediente {nombre: 'Levadura'})
 MATCH (oregano:Ingrediente {nombre: 'Orégano'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Pizza margherita',
   descripcion: 'Pizza italiana clásica con salsa de tomate, muzzarella y albahaca fresca',
   dificultad: 'Media',
@@ -172,6 +175,7 @@ MATCH (muzza:Ingrediente {nombre: 'Queso Muzzarella'})
 MATCH (sal:Ingrediente {nombre: 'Sal'})
 MATCH (aceite:Ingrediente {nombre: 'Aceite'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Milanesa de berenjena',
   descripcion: 'Milanesa vegetariana de berenjena gratinada con salsa y queso',
   dificultad: 'Media',
@@ -199,6 +203,7 @@ MATCH (limon:Ingrediente {nombre: 'Limón'})
 MATCH (sal:Ingrediente {nombre: 'Sal'})
 MATCH (nachos:Ingrediente {nombre: 'Nachos'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Guacamole con nachos',
   descripcion: 'Dip cremoso de palta con tomate y cilantro, acompañado de nachos crujientes',
   dificultad: 'Baja',
@@ -226,6 +231,7 @@ MATCH (aceite:Ingrediente {nombre: 'Aceite'})
 MATCH (limon:Ingrediente {nombre: 'Limón'})
 MATCH (sal:Ingrediente {nombre: 'Sal'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Ensalada primavera',
   descripcion: 'Ensalada fresca y colorida con verduras de estación, aliño cítrico',
   dificultad: 'Baja',
@@ -255,6 +261,7 @@ MATCH (sal:Ingrediente {nombre: 'Sal'})
 MATCH (pimienta:Ingrediente {nombre: 'Pimienta'})
 MATCH (queso:Ingrediente {nombre: 'Queso Parmesano'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Tallarines con bolognesa',
   descripcion: 'Clásica pasta italiana con salsa bolognesa casera y queso parmesano',
   dificultad: 'Media',
@@ -283,6 +290,7 @@ MATCH (sal:Ingrediente {nombre: 'Sal'})
 MATCH (manteca:Ingrediente {nombre: 'Manteca'})
 MATCH (queso:Ingrediente {nombre: 'Queso Parmesano'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Ñoquis de papa',
   descripcion: 'Ñoquis caseros de papa con manteca y salvia, un clásico de la cocina italiana',
   dificultad: 'Alta',
@@ -306,6 +314,7 @@ MATCH (huevo:Ingrediente {nombre: 'Huevo'})
 MATCH (azucar:Ingrediente {nombre: 'Azúcar'})
 MATCH (vainilla:Ingrediente {nombre: 'Esencia de Vainilla'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Flan casero',
   descripcion: 'Flan cremoso y suave, el postre clásico argentino con caramelo',
   dificultad: 'Baja',
@@ -330,6 +339,7 @@ MATCH (chocolate:Ingrediente {nombre: 'Chocolate'})
 MATCH (manteca:Ingrediente {nombre: 'Manteca'})
 MATCH (levadura:Ingrediente {nombre: 'Polvo de Hornear'})
 CREATE (r:Receta {
+  id: randomUUID(),
   titulo: 'Torta de chocolate',
   descripcion: 'Torta húmeda y esponjosa de chocolate, ideal para cualquier ocasión',
   dificultad: 'Media',

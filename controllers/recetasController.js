@@ -33,7 +33,7 @@ export const crearReceta = async (req, res) => {
             MATCH (u:Usuario {nombre: $creador})
             MATCH (c:Categoria {nombre: $categoria})
             WITH u, c LIMIT 1
-            MERGE (r:Receta {titulo: $titulo})
+            CREATE (r:Receta {id: randomUUID(), titulo: $titulo})
             SET r.descripcion = $descripcion,
                 r.dificultad = $dificultad,
                 r.tiempo = $tiempo,
@@ -42,7 +42,7 @@ export const crearReceta = async (req, res) => {
                 r.imagen = $imagen
             MERGE (u)-[:CREO]->(r)
             MERGE (r)-[:PERTENECE_A]->(c)
-            RETURN r.titulo AS titulo, u.nombre AS creador, c.nombre AS categoria, r.imagen AS imagen
+            RETURN r.id AS id, r.titulo AS titulo, u.nombre AS creador, c.nombre AS categoria, r.imagen AS imagen
         `;
 
         const result = await session.run(query, {
@@ -62,6 +62,7 @@ export const crearReceta = async (req, res) => {
         res.status(201).json({
             message: 'Receta creada y vinculada correctamente',
             receta: {
+                id: record.get('id'),
                 titulo: record.get('titulo'),
                 creador: record.get('creador'),
                 categoria: record.get('categoria'),
