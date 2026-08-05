@@ -1,16 +1,17 @@
 {
-  "name": "tp2_neo4j",
+  "name": "recetario",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend Express + Neo4j para un recetario social con recomendaciones colaborativas y un motor de patrocinio B2B sobre el grafo.",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "node utils/seeder.js",
     "db:clean": "node utils/cleanDB.js"
   },
-  "keywords": [],
+  "keywords": ["neo4j", "express", "graph-database", "cypher"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "cors": "^2.8.6",
