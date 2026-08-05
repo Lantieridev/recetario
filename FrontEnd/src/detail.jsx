@@ -170,6 +170,55 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe, onNavigateP
   const [cookMode, setCookMode] = useState(false);
   const toast = useToast();
 
+  // Retail Cart State
+  const [openCart, setOpenCart] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+  const [cartTotal, setCartTotal] = useState(0);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartSuccess, setCartSuccess] = useState(false);
+  const [retailer, setRetailer] = useState('Carrefour');
+
+  const handleOpenCart = async () => {
+    const missing = data.ingredientes.filter((ing, idx) => !checkedIngs.has(`p-${idx}`) && !checkedIngs.has(`o-${idx}`));
+    if (missing.length === 0) {
+      toast('¡Ya marcaste todos los ingredientes de esta receta!');
+      return;
+    }
+
+    setOpenCart(true);
+    setCartLoading(true);
+    setCartSuccess(false);
+    try {
+      const ingNames = missing.map(i => i.nombre);
+      const res = await window.api.retailResolveCart({ retailer, ingredientes: ingNames });
+      setCartItems(res.items);
+      setCartTotal(res.total);
+    } catch (err) {
+      toast('Error al resolver carrito inteligente');
+      console.error(err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  const handleCheckoutCart = async () => {
+    setCartLoading(true);
+    try {
+      await window.api.retailCheckout({
+        retailerNombre: retailer,
+        monto: cartTotal,
+        itemsCount: cartItems.length
+      });
+      setCartSuccess(true);
+      toast('¡Pedido confirmado en Carrefour!', { icon: 'sparkle' });
+    } catch (err) {
+      toast('Error al procesar la compra');
+      console.error(err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
   useEffect(() => {
     let alive = true;
     window.scrollTo(0, 0);
@@ -462,6 +511,32 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe, onNavigateP
                 </ul>
               </>
             )}
+
+            {/* Botón de Compra Retail / Smart Cart */}
+            <div style={{ marginTop: 28, borderTop: '1.5px dashed var(--rule)', paddingTop: 24 }}>
+              <button
+                type="button"
+                onClick={handleOpenCart}
+                className="btn focus-ring"
+                style={{
+                  width: '100%',
+                  height: 48,
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--ink)',
+                  color: 'var(--paper)',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <Icon name="cart" size={16} /> Pedir ingredientes en Carrefour
+              </button>
+            </div>
           </aside>
 
           {/* Steps */}
@@ -550,7 +625,117 @@ const DetailScreen = ({ id, user, initialData, onBack, onOpenRecipe, onNavigateP
           .detail-body { grid-template-columns: 1fr !important; gap: 40px !important; }
           .detail-hero > div:nth-child(2), .detail-body > aside { position: relative !important; top: 0 !important; }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to { opacity: 1; backdrop-filter: blur(8px); }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(40px) scale(0.96); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .modal-content {
+          animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
       `}</style>
+
+      {openCart && ReactDOM.createPortal(
+        <div className="modal-backdrop" style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: 'rgba(28,24,20,.6)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24
+        }} onClick={() => setOpenCart(false)}>
+          <div className="modal-content" style={{
+            background: 'var(--paper)', border: '1px solid var(--rule)',
+            borderRadius: 'var(--radius-xl)', padding: 32, maxWidth: 500, width: '100%',
+            maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24
+          }} onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 className="font-display" style={{ fontSize: 24, margin: 0 }}>Canasta Inteligente</h3>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Distribución y compra en {retailer}</div>
+              </div>
+              <button onClick={() => setOpenCart(false)} className="btn btn-icon btn-ghost btn-sm" aria-label="Cerrar">
+                <Icon name="close" size={16} />
+              </button>
+            </div>
+
+            {cartLoading ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                Preparando tu canasta...
+              </div>
+            ) : cartSuccess ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 0', textAlign: 'center' }}>
+                <span style={{
+                  width: 56, height: 56, borderRadius: 999,
+                  background: 'var(--cat-veg)', color: 'var(--paper)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Icon name="check" size={28} stroke={3} />
+                </span>
+                <div>
+                  <h4 className="font-display" style={{ fontSize: 20, margin: '0 0 8px' }}>¡Pedido Confirmado!</h4>
+                  <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
+                    Tu orden por ${cartTotal} fue enviada con éxito a {retailer}. Podés seguir el pedido en su plataforma.
+                  </p>
+                </div>
+                <Button variant="primary" onClick={() => setOpenCart(false)} style={{ marginTop: 12 }}>
+                  Cerrar
+                </Button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* List items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+                  {cartItems.map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      background: 'var(--paper-2)', padding: '12px 16px', borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--rule-soft)'
+                    }}>
+                      <div style={{ minWidth: 0, flex: 1, marginRight: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.nombre}
+                        </div>
+                        {item.esPatrocinado && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>
+                            ★ Marca Asociada: {item.marca}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink-2)' }}>
+                        ${item.precio}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid var(--rule)', paddingTop: 16 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-2)' }}>Total Estimado:</span>
+                  <span className="font-display" style={{ fontSize: 28, color: 'var(--cat-veg)' }}>${cartTotal}</span>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                  <Button variant="ghost" onClick={() => setOpenCart(false)} style={{ flex: 1 }}>
+                    Cancelar
+                  </Button>
+                  <Button variant="accent" onClick={handleCheckoutCart} style={{ flex: 1.5, height: 44 }}>
+                    Confirmar Compra
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
