@@ -78,7 +78,7 @@ cada carga de página.
 | Grupo | Base | Qué hace |
 |---|---|---|
 | Usuarios | `/api/usuarios` | alta, login, perfil, favoritos, seguir/dejar de seguir, recomendaciones |
-| Recetas | `/api/recetas` | CRUD, buscador inteligente, receta del día, tendencias, feed de seguidos |
+| Recetas | `/api/recetas` | alta y consulta (sin update/delete), buscador inteligente, receta del día, tendencias, feed de seguidos |
 | Dashboard | `/api/dashboard` | estadísticas agregadas, top creadores |
 | B2B | `/api/b2b` | bidding de ingredientes, analytics de co-ocurrencia (tier Enterprise) |
 | Admin | `/api/admin` | gestión de partners y de relaciones usuario↔partner |
